@@ -1,0 +1,9 @@
+export const PATH_HOME = '/home';
+export const PATH_UPLOAD = '/upload';
+export const PATH_RECORDS = '/records';
+export const PATH_STATISTICS = '/statistics';
+export const PATH_FEE = '/fee';
+export const PATH_USERS = '/users';
+export const PATH_INVESTMENT = '/investment';
+export const PATH_CUSTOMERS = '/customers';
+export const PATH_LEGALFACTUAL = '/Indv-Inst-History';
