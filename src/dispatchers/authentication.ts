@@ -38,7 +38,18 @@ export const updateUserData = (data) => async (dispatch) => {
 };
 
 export const logout = () => async (dispatch) => {
-    dispatch(logoutUser());
+    // Check and remove token from localStorage if exists
+    if (localStorage.getItem('accessToken')) {
+        localStorage.removeItem('accessToken');
+    }
+
+    // Check and remove token from sessionStorage if exists
+    if (sessionStorage.getItem('accessToken')) {
+        sessionStorage.removeItem('accessToken');
+    }
+
+    window.dispatchEvent(new Event('storage')); // این رویداد ساختگی storage برای تریگر شدن اثرات استفاده می‌شود
+
     persistor.purge();
     // await _logout();
 };

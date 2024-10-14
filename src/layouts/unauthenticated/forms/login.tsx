@@ -19,22 +19,31 @@ const Login: SFC = () => {
     const initialValues = {
         username: '',
         password: '',
+        rememberMe: false,
     };
 
     const handleSubmit = async (
-        values: { username: string; password: string },
-        formikHelpers: FormikHelpers<{ username: string; password: string }>
+        values: { username: string; password: string; rememberMe: boolean },
+        formikHelpers: FormikHelpers<{
+            username: string;
+            password: string;
+            rememberMe: boolean;
+        }>
     ) => {
         if (values.password !== 'demo' || values.username !== 'demo') {
             toast.error('نام کاربری یا رمز عبور اشتباه است.');
         } else {
-            await dispatch(
-                setAuthentication({
-                    accessToken: 'ok',
-                })
-            );
+            if (values.rememberMe) {
+                localStorage.setItem('accessToken', 'ok');
+            } else {
+                sessionStorage.setItem('accessToken', 'ok');
+            }
+
             formikHelpers.resetForm();
             toast.success('خوش آمدید.');
+
+            window.dispatchEvent(new Event('storage')); // این رویداد ساختگی storage برای تریگر شدن اثرات استفاده می‌شود
+
             navigate('/home');
         }
     };
@@ -106,12 +115,25 @@ const Login: SFC = () => {
                                                 errors.password}
                                         </div>
                                     </S.InputContainer>
+                                    <S.CheckboxContainer>
+                                        <S.Checkbox
+                                            type="checkbox"
+                                            id="rememberMe"
+                                            name="rememberMe"
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            checked={values.rememberMe}
+                                        />
+                                        <label htmlFor="rememberMe">
+                                            من را به خاطر بسپار
+                                        </label>
+                                    </S.CheckboxContainer>
                                     <S.Button
                                         dirty={dirty}
                                         disabled={isSubmitting}
                                         isSubmitting={isSubmitting}
                                         isValid={isValid}
-                                        text="دریافت رمز یکبار مصرف"
+                                        text="ورود"
                                         type={ButtonType.submit}
                                         borderRadius="10px"
                                     />

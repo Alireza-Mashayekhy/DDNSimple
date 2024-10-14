@@ -19,6 +19,14 @@ export const Button = styled(UButton)`
     }
 `;
 
+export const CheckboxContainer = styled.div`
+    display: flex;
+
+    margin: 10px;
+`;
+
+export const Checkbox = styled.input``;
+
 export const Logo = styled.img`
     border-radius: 50%;
     width: 50px;
@@ -63,6 +71,7 @@ export const Background = styled.section`
     background: url(${loginImg}) no-repeat;
     background-size: cover;
     background-position: center;
+    padding: 30px;
 `;
 export const Container = styled.div`
     position: relative;
@@ -76,7 +85,7 @@ export const Container = styled.div`
     border: 2px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(30px);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    // border-radius: 10px;
+    border-radius: 10px;
     background-color: transparent;
     font-family: IRANSans;
     @media (max-width: 512px) {
