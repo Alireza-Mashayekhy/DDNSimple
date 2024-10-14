@@ -1,28 +1,14 @@
 import { getRefreshToken } from '@/utils/authentication';
 import axios from 'axios';
 
-import { toast } from 'react-toastify';
-
 const BASE_URL = `${import.meta.env.VITE_APP_API_URL}`;
 
-export const sendOtp = async (data) => {
+export const login = async (data) => {
     try {
-        const response = await axios.post(`${BASE_URL}/auth/entry/`, data);
+        const response = await axios.post(`${BASE_URL}/auth/token/`, data);
         return response.data;
     } catch (error) {
         console.error(error);
-        toast.error('خطایی در ورود کاربر رخ داده است');
-        throw error;
-    }
-};
-
-export const submitOtp = async (data) => {
-    try {
-        const response = await axios.post(`${BASE_URL}/auth/verify-otp/`, data);
-        return response.data;
-    } catch (error) {
-        console.error(error);
-        toast.error('خطایی در ورود کاربر رخ داده است');
         throw error;
     }
 };

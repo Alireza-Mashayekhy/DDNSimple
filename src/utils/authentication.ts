@@ -1,50 +1,50 @@
-import { store } from "@/redux/store";
+import { store } from '@/redux/store';
 
 export const authorizationFormHeaders = () => {
-  const {
-    authentication: { accessToken },
-  } = store.getState();
+    const accessToken =
+        localStorage.getItem('accessToken') ||
+        sessionStorage.removeItem('accessToken');
 
-  return {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "multipart/form-data",
-    },
-  };
+    return {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'multipart/form-data',
+        },
+    };
 };
 
 export const authorizationHeaders = () => {
-  const {
-    authentication: { accessToken },
-  } = store.getState();
+    const accessToken =
+        localStorage.getItem('accessToken') ||
+        sessionStorage.removeItem('accessToken');
 
-  return {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  };
+    return {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
 };
 
 export const getAccess = () => {
-  const {
-    authentication: { accessToken },
-  } = store.getState();
+    const accessToken =
+        localStorage.getItem('accessToken') ||
+        sessionStorage.removeItem('accessToken');
 
-  return `Bearer ${accessToken}`;
+    return `Bearer ${accessToken}`;
 };
 
 export const getUserData = () => {
-  const {
-    authentication: { userData },
-  } = store.getState();
+    const {
+        authentication: { userData },
+    } = store.getState();
 
-  return userData;
+    return userData;
 };
 
 export const getRefreshToken = () => {
-  const {
-    authentication: { refreshToken },
-  } = store.getState();
+    const refreshToken =
+        localStorage.getItem('refreshToken') ||
+        sessionStorage.removeItem('refreshToken');
 
-  return refreshToken;
+    return refreshToken;
 };

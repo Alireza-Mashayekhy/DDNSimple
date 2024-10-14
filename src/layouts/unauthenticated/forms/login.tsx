@@ -11,6 +11,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
 import { useDispatch } from 'react-redux'; // Import useDispatch
 import { setAuthentication } from '@/redux/store/authentication';
+import { login } from '@/api/authentication';
 
 const Login: SFC = () => {
     const navigate = useNavigate();
@@ -30,13 +31,17 @@ const Login: SFC = () => {
             rememberMe: boolean;
         }>
     ) => {
-        if (values.password !== 'demo' || values.username !== 'demo') {
-            toast.error('نام کاربری یا رمز عبور اشتباه است.');
-        } else {
+        try {
+            const res = await login({
+                username: values.username,
+                password: values.password,
+            });
             if (values.rememberMe) {
-                localStorage.setItem('accessToken', 'ok');
+                localStorage.setItem('accessToken', res.access);
+                localStorage.setItem('refreshToken', res.refresh);
             } else {
-                sessionStorage.setItem('accessToken', 'ok');
+                sessionStorage.setItem('accessToken', res.access);
+                sessionStorage.setItem('refreshToken', res.refresh);
             }
 
             formikHelpers.resetForm();
@@ -45,6 +50,14 @@ const Login: SFC = () => {
             window.dispatchEvent(new Event('storage')); // این رویداد ساختگی storage برای تریگر شدن اثرات استفاده می‌شود
 
             navigate('/home');
+        } catch (error) {
+            if (error.response.status === 401) {
+                toast.error('نام کاربری یا رمز عبور اشتباه است.');
+            } else {
+                toast.error(
+                    'مشکلی در ورود به وجود آماده است. لطفا مجددا تلاش کنید.'
+                );
+            }
         }
     };
 
