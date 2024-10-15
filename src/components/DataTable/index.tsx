@@ -172,6 +172,7 @@ const DataTable: FC<UserTableProps | any> = ({
                 'price',
                 'freezed_count',
                 'unfreezed_count',
+                'total_value',
             ].includes(field)
         ) {
             return numberFormatter(rowData[field]);
