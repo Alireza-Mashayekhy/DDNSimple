@@ -9,7 +9,6 @@ import { FileUpload } from 'primereact/fileupload'; // Import FileUpload type
 import { getUserData } from '@/utils/authentication.ts';
 import { updateUserData } from '@/dispatchers/authentication.ts';
 import { useDispatch } from 'react-redux';
-import { setUserData } from '@/redux/store/authentication.ts';
 
 export interface SettingModalProps {
     visible: boolean;
@@ -70,7 +69,6 @@ const SettingModal: SFC<SettingModalProps> = ({ visible, setVisibleProp }) => {
                 };
                 console.log(updatedUserData);
 
-                dispatch(setUserData(updatedUserData));
                 setProfile(updatedUserData);
                 navigate('/');
                 setVisibleProp(false);
