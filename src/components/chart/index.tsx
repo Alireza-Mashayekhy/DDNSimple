@@ -1,8 +1,7 @@
 import { getTheme } from '@/redux/selectors';
 import React from 'react';
-import Chart from 'react-apexcharts';
 import { useSelector } from 'react-redux';
-
+import * as S from './Style';
 interface Dataset {
     name: string;
     data: number[];
@@ -26,7 +25,7 @@ const LineChart: React.FC<LineChartProps> = ({ datasets, labels }) => {
             toolbar: {
                 show: true,
                 tools: {
-                    download: false,
+                    download: true,
                 },
             },
         },
@@ -77,6 +76,16 @@ const LineChart: React.FC<LineChartProps> = ({ datasets, labels }) => {
                 show: true,
             },
         },
+        toolbar: {
+            show: true,
+            tools: {
+                download: true,
+            },
+            style: {
+                backgroundColor: theme === 'dark' ? '#333333' : '#ffffff',
+                color: theme === 'dark' ? '#ffffff' : '#000000',
+            },
+        },
     };
 
     return (
@@ -90,7 +99,11 @@ const LineChart: React.FC<LineChartProps> = ({ datasets, labels }) => {
             <div
                 style={{ position: 'relative', width: '100%', height: '400px' }}
             >
-                <Chart options={chartOptions} series={datasets} type="line" />
+                <S.ChartStyle
+                    options={chartOptions}
+                    series={datasets}
+                    type="line"
+                />
             </div>
         </div>
     );
