@@ -17,19 +17,21 @@ const TopBar = () => {
                 <Avatar label="P" size="xlarge" image={defaultAvatar} />
             </S.ImageContainer>
             <S.Gap />
-            {Object.keys(pages).map((key) => {
+            {/* {Object.keys(pages).map((key) => {
                 if (location.pathname.includes(key)) {
                     return pages[key];
                 }
-            })}
+            })} */}
             <S.Gap />
-            {new Date()
-                .toLocaleDateString('fa-ir', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: '2-digit',
-                })
-                .toString()}
+            <div className="text-lg ml-2">
+                {new Date()
+                    .toLocaleDateString('fa-ir', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: '2-digit',
+                    })
+                    .toString()}
+            </div>
         </>
     );
 };

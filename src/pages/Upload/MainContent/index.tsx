@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { fetchUploadData } from '@/dispatchers/upload';
 import { colors } from '@/styles';
+import UploadBack from '@/assets/uploadBack.jpg';
 
 interface ColumnField {
     field: string;
@@ -27,9 +28,15 @@ const MainContent: SFC = () => {
     const [stockData, setStockData] = useState<StockData[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dispatch = useDispatch<AppDispatch>();
+
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 500);
+    useEffect(() => {
+        window.addEventListener('resize', () =>
+            setTableHeight(window.innerHeight - 500)
+        );
+    }, []);
 
     const data = useSelector(getUploadData)?.data;
     useEffect(() => {
@@ -102,38 +109,45 @@ const MainContent: SFC = () => {
     };
 
     return (
-        <S.Container>
-            <div className="data-filter flex !justify-center">
-                <S.UploadContainer>
-                    <input
-                        type="file"
-                        id="multipleFileUpload"
-                        ref={fileInputRef}
-                        multiple
-                        style={{ display: 'none' }}
-                        accept=".xlsx"
-                        onChange={handleFileChange}
-                    />
-                    <S.SCloudUploadIcon fontColor={colors.palette.blue[300]} />
+        <div className="relative">
+            <S.Background $url={UploadBack} />
+            <S.Container>
+                <h1 className="text-right px-10 text-4xl">بارگذاری</h1>
+                <div className="data-filter flex !justify-center">
+                    <S.UploadContainer>
+                        <input
+                            type="file"
+                            id="multipleFileUpload"
+                            ref={fileInputRef}
+                            multiple
+                            style={{ display: 'none' }}
+                            accept=".xlsx"
+                            onChange={handleFileChange}
+                        />
+                        <S.SCloudUploadIcon
+                            fontColor={colors.palette.blue[300]}
+                        />
 
-                    <S.StyledButton
-                        fontColor={colors.palette.blue[300]}
-                        onClick={handleOpenFile}
-                        disabled={isUploading}
-                    >
-                        {isUploading
-                            ? 'در حال ارسال...'
-                            : 'فایل‌های DDN را بارگذاری نمایید'}
-                    </S.StyledButton>
-                </S.UploadContainer>
-            </div>
-            <DataTable
-                data={stockData}
-                columnFields={columnUploadFields}
-                upload={true}
-                pagination
-            />
-        </S.Container>
+                        <S.StyledButton
+                            fontColor={colors.palette.blue[300]}
+                            onClick={handleOpenFile}
+                            disabled={isUploading}
+                        >
+                            {isUploading
+                                ? 'در حال ارسال...'
+                                : 'فایل‌های DDN را بارگذاری نمایید'}
+                        </S.StyledButton>
+                    </S.UploadContainer>
+                </div>
+                <DataTable
+                    data={stockData}
+                    columnFields={columnUploadFields}
+                    upload={true}
+                    pagination
+                    scrollHeight={tableHeight + 'px'}
+                />
+            </S.Container>
+        </div>
     );
 };
 

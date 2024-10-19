@@ -21,6 +21,9 @@ import { toast } from 'react-toastify';
 import { fetchUsersList } from '@/dispatchers/users';
 import { getTheme } from '@/redux/selectors';
 import LineChart from '@/components/chart';
+import { FloatLabel } from 'primereact/floatlabel';
+import { InputText } from 'primereact/inputtext';
+import usersBack from '@/assets/usersBack.png';
 
 const dialogStyle = {
     width: '30vw',
@@ -34,6 +37,11 @@ const detailDialogStyle = {
 };
 
 const columnFields = [
+    {
+        field: 'is_active',
+        header: '',
+        width: '10%',
+    },
     {
         field: 'full_name',
         header: 'نام کاربر',
@@ -53,11 +61,7 @@ const columnFields = [
         field: 'email',
         header: 'ایمیل',
         width: '10%',
-    },
-    {
-        field: 'is_active',
-        header: 'وضعیت',
-        width: '10%',
+        align: 'left',
     },
     {
         field: 'details',
@@ -69,11 +73,11 @@ const columnFields = [
         header: 'ویرایش',
         width: '10%',
     },
-    {
-        field: 'change_status',
-        header: 'تغییر وضعیت',
-        width: '10%',
-    },
+    // {
+    //     field: 'change_status',
+    //     header: 'تغییر وضعیت',
+    //     width: '10%',
+    // },
 ];
 
 const DetailColumnFields = [
@@ -151,6 +155,8 @@ const MainContent: SFC = () => {
         phone: '',
         email: '',
         is_active: true,
+        marketerShare: '',
+        feeRate: '',
     });
     const [newUser, setNewUser] = useState({
         first_name: '',
@@ -179,8 +185,15 @@ const MainContent: SFC = () => {
     const [ddnHistory, setDdnHistory] = useState([]);
     const [ddnHistoryChart, setDdnHistoryChart] = useState<{
         labels: string[];
-        datasets: { label: string; data: number[]; borderColor: string }[];
+        datasets: { name: string; data: number[]; borderColor: string }[];
     }>({ labels: [], datasets: [] });
+
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 350);
+    useEffect(() => {
+        window.addEventListener('resize', () =>
+            setTableHeight(window.innerHeight - 350)
+        );
+    }, []);
 
     const theme = useSelector(getTheme);
     const headerStyle = {
@@ -212,16 +225,42 @@ const MainContent: SFC = () => {
     }, []);
 
     useEffect(() => {
-        // setUserData(userStoreData);
+        setUserData(userStoreData);
     }, [userStoreData]);
 
     const handleEditClick = (detail) => {
         setEditModal(true);
         setUserDetail(detail);
     };
+
+    const validateEmail = (email) => {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(String(email).toLowerCase());
+    };
+
     const editUserFunc = async () => {
         if (!userDetail.email || !userDetail.national_id || !userDetail.phone) {
             toast.error('لطفا تمامی مقادیر را پر کنید.');
+            return;
+        }
+        if (userDetail.national_id.length !== 10) {
+            toast.error('کدملی معتبر نیست.');
+            return;
+        }
+        if (userDetail.phone.length !== 11) {
+            toast.error('شماره موبایل معتبر نیست.');
+            return;
+        }
+        if (!validateEmail(userDetail.email)) {
+            toast.error('ایمیل معتبر نیست.');
+            return;
+        }
+        if (parseInt(userDetail.marketerShare) > 100) {
+            toast.error('سهم بازاریاب معتبر نیست.');
+            return;
+        }
+        if (parseInt(userDetail.feeRate) > 100) {
+            toast.error('نرخ کارمزد معتبر نیست.');
             return;
         }
         try {
@@ -381,10 +420,10 @@ const MainContent: SFC = () => {
             const newList = userStoreData.filter((e) =>
                 e.full_name.includes(value)
             );
-            // setUserData(newList);
+            setUserData(newList);
         } else {
             setSearch(value);
-            // setUserData(userStoreData);
+            setUserData(userStoreData);
         }
     };
 
@@ -406,7 +445,7 @@ const MainContent: SFC = () => {
                 const datasets = Object.entries(chartData)?.map(
                     ([ticker, data]) => {
                         return {
-                            label: ticker,
+                            name: ticker,
                             data: data?.total_count?.reverse(),
                             borderColor: theme === 'dark' ? 'white' : 'black',
                             fill: false,
@@ -420,7 +459,7 @@ const MainContent: SFC = () => {
                 );
 
                 setDdnHistoryChart({
-                    labels: chartData[maxDatesDataset.label].dates.reverse(),
+                    labels: chartData[maxDatesDataset.name].dates.reverse(),
                     datasets: datasets,
                 });
             }
@@ -504,280 +543,411 @@ const MainContent: SFC = () => {
     );
 
     return (
-        <S.Container>
-            <div className="flex mt-10 mb-2 gap-5 justify-between flex-wrap items-center px-2.5">
-                <div className="flex gap-5">
-                    <Button
-                        label="ایجاد کاربر جدید"
-                        onClick={() => {
-                            setAddUserModal(true);
-                        }}
-                        icon="pi pi-plus ml-2 text-sm"
-                        className={` rounded-lg py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                        outlined
-                    />
-                    <Button
-                        label="بارگذاری"
-                        icon="pi pi-upload ml-2 text-sm"
-                        className={` rounded-lg  py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                        outlined
-                    />
-                </div>
-                <S.Input
-                    value={search}
-                    onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        filterList(e.target.value)
-                    }
-                    placeholder="جستجو"
-                />
-                <S.DialogStyle
-                    header="ایجاد کاربر جدید"
-                    visible={addUserModal}
-                    style={dialogStyle}
-                    headerStyle={headerStyle}
-                    contentStyle={contentStyle}
-                    onHide={() => setAddUserModal(false)}
-                    dismissableMask
-                    footer={footerContent}
-                    draggable={false}
-                    resizable={false}
-                >
-                    <div className="flex flex-col gap-5 items-center">
-                        <S.Input
-                            value={newUser.first_name}
-                            onChange={(e) =>
-                                setNewUser((prev) => ({
-                                    ...prev,
-                                    first_name: e.target.value,
-                                }))
-                            }
-                            placeholder="نام کاربر"
-                        />
-                        <S.Input
-                            value={newUser.last_name}
-                            onChange={(e) =>
-                                setNewUser((prev) => ({
-                                    ...prev,
-                                    last_name: e.target.value,
-                                }))
-                            }
-                            placeholder="نام خانوادگی کاربر"
-                        />
-                        <S.Input
-                            value={newUser.national_id}
-                            onChange={(e) =>
-                                setNewUser((prev) => ({
-                                    ...prev,
-                                    national_id: e.target.value,
-                                }))
-                            }
-                            keyfilter="int"
-                            placeholder="کد ملی"
-                        />
-                        <S.Input
-                            value={newUser.phone}
-                            onChange={(e) =>
-                                setNewUser((prev) => ({
-                                    ...prev,
-                                    phone: e.target.value,
-                                }))
-                            }
-                            keyfilter="int"
-                            placeholder="شماره موبایل"
-                        />
-                        <S.Input
-                            value={newUser.email}
-                            onChange={(e) =>
-                                setNewUser((prev) => ({
-                                    ...prev,
-                                    email: e.target.value,
-                                }))
-                            }
-                            placeholder="ایمیل"
-                        />
-                    </div>
-                </S.DialogStyle>
-                <S.DialogStyle
-                    header="تغییر وضعیت کاربر"
-                    visible={changeStatusModal}
-                    style={dialogStyle}
-                    headerStyle={headerStyle}
-                    contentStyle={contentStyle}
-                    onHide={() => setChangeStatusModal(false)}
-                    footer={footerContentChangeStatus}
-                    draggable={false}
-                    resizable={false}
-                >
-                    <div>آیا از تغییر وضعیت کاربر مطمئن هستید؟</div>
-                </S.DialogStyle>
-                <S.DialogStyle
-                    header={selectedUser?.full_name}
-                    visible={detailModal}
-                    style={detailDialogStyle}
-                    headerStyle={headerStyle}
-                    contentStyle={contentStyle}
-                    onHide={() => setDetailModal(false)}
-                    dismissableMask
-                    // footer={footerContentChangeStatus}
-                    draggable={false}
-                    resizable={false}
-                >
-                    <div className="flex justify-end mb-5">
+        <div className="relative">
+            <S.Background $url={usersBack} />
+            <S.Container>
+                <h1 className="text-right mb-14 px-10 text-4xl">کاربران</h1>
+                <div className="flex mt-10 mb-2 gap-5 justify-between flex-wrap items-center px-2.5">
+                    <div className="flex gap-5">
                         <Button
-                            onClick={exportData}
-                            icon="pi pi-download"
-                            text
-                            className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                            label="ایجاد کاربر جدید"
+                            onClick={() => {
+                                setAddUserModal(true);
+                            }}
+                            icon="pi pi-plus ml-2 text-sm"
+                            className={` rounded-lg py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                            outlined
                         />
-                    </div>
-                    <DataTable
-                        data={detail}
-                        columnFields={DetailColumnFields}
-                        pagination
-                        onDetailsClick={handleDetailsClick2}
-                        onDeleteClick={handleDeleteClick}
-                    />
-                </S.DialogStyle>
-                <S.DialogStyle
-                    header={selectedUser?.full_name}
-                    visible={detailModal2}
-                    style={detailDialogStyle}
-                    headerStyle={headerStyle}
-                    contentStyle={contentStyle}
-                    onHide={() => setDetailModal2(false)}
-                    dismissableMask
-                    // footer={footerContentChangeStatus}
-                    draggable={false}
-                    resizable={false}
-                >
-                    <div className="flex justify-end">
                         <Button
-                            onClick={downloadUserDetail}
-                            icon="pi pi-download text-xl"
-                            text
-                            className={` rounded-lg p-6 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                            label="بارگذاری"
+                            icon="pi pi-upload ml-2 text-sm"
+                            className={` rounded-lg  py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                            outlined
                         />
                     </div>
-                    <DataTable
-                        data={ddnHistory}
-                        loading={false}
-                        columnFields={customerDetailColumnFields}
-                        pagination={true}
-                        totalRecords={ddnHistory.length}
-                        selectedRows={10}
-                        rowsOption={10}
-                    />
+                    <S.FloatLabelSection>
+                        <S.FloatLabelInput
+                            id="search"
+                            value={search}
+                            onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                filterList(e.target.value)
+                            }
+                        />
+                        <label
+                            htmlFor="search"
+                            className="text-right right-0 bg-inherit"
+                        >
+                            جستجو
+                        </label>
+                    </S.FloatLabelSection>
 
-                    {/* <h3 className="font-bold">نمودار سرمایه‌گذاری</h3> */}
-                    <div className="flex justify-center mt-10">
-                        <LineChart
-                            datasets={ddnHistoryChart.datasets}
-                            labels={ddnHistoryChart.labels}
+                    <S.DialogStyle
+                        header="ایجاد کاربر جدید"
+                        visible={addUserModal}
+                        style={dialogStyle}
+                        headerStyle={headerStyle}
+                        contentStyle={contentStyle}
+                        onHide={() => setAddUserModal(false)}
+                        dismissableMask
+                        // footer={footerContent}
+                        draggable={false}
+                        resizable={false}
+                    >
+                        <div className="flex flex-col gap-10 items-center">
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="firstName"
+                                    value={newUser.first_name}
+                                    onChange={(e) =>
+                                        setNewUser((prev) => ({
+                                            ...prev,
+                                            first_name: e.target.value,
+                                        }))
+                                    }
+                                    className="text-right"
+                                />
+                                <label
+                                    htmlFor="firstName"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    نام کاربر
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="lastName"
+                                    value={newUser.last_name}
+                                    onChange={(e) =>
+                                        setNewUser((prev) => ({
+                                            ...prev,
+                                            last_name: e.target.value,
+                                        }))
+                                    }
+                                    className="text-right"
+                                />
+                                <label
+                                    htmlFor="lastName"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    نام خانوادگی کاربر
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="nationalId"
+                                    value={newUser.national_id}
+                                    onChange={(e) =>
+                                        setNewUser((prev) => ({
+                                            ...prev,
+                                            national_id: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="nationalId"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    کد ملی
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="phone"
+                                    value={newUser.phone}
+                                    onChange={(e) =>
+                                        setNewUser((prev) => ({
+                                            ...prev,
+                                            phone: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="phone"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    شماره موبایل
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="email"
+                                    value={newUser.email}
+                                    onChange={(e) =>
+                                        setNewUser((prev) => ({
+                                            ...prev,
+                                            email: e.target.value,
+                                        }))
+                                    }
+                                />
+                                <label
+                                    htmlFor="email"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    ایمیل
+                                </label>
+                            </S.FloatLabelSection>
+                            <div className="flex justify-center gap-5">
+                                <Button
+                                    label="انصراف"
+                                    severity="danger"
+                                    onClick={() => setAddUserModal(false)}
+                                    className={` rounded-lg text-red-700  ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                    outlined
+                                />
+                                <Button
+                                    label="ایجاد کاربر"
+                                    onClick={() => createUser()}
+                                    className={` rounded-lg  ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                    outlined
+                                />
+                            </div>
+                        </div>
+                    </S.DialogStyle>
+                    <S.DialogStyle
+                        header="تغییر وضعیت کاربر"
+                        visible={changeStatusModal}
+                        style={dialogStyle}
+                        headerStyle={headerStyle}
+                        contentStyle={contentStyle}
+                        onHide={() => setChangeStatusModal(false)}
+                        footer={footerContentChangeStatus}
+                        draggable={false}
+                        resizable={false}
+                    >
+                        <div>آیا از تغییر وضعیت کاربر مطمئن هستید؟</div>
+                    </S.DialogStyle>
+                    <S.DialogStyle
+                        header={selectedUser?.full_name}
+                        visible={detailModal}
+                        style={detailDialogStyle}
+                        headerStyle={headerStyle}
+                        contentStyle={contentStyle}
+                        onHide={() => setDetailModal(false)}
+                        dismissableMask
+                        draggable={false}
+                        resizable={false}
+                    >
+                        <div className="flex justify-end mb-5">
+                            <Button
+                                onClick={exportData}
+                                icon="pi pi-download"
+                                text
+                                className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                            />
+                        </div>
+                        <DataTable
+                            data={detail}
+                            columnFields={DetailColumnFields}
+                            pagination
+                            onDetailsClick={handleDetailsClick2}
+                            onDeleteClick={handleDeleteClick}
+                        />
+                    </S.DialogStyle>
+                    <S.DialogStyle
+                        header={selectedUser?.full_name}
+                        visible={detailModal2}
+                        style={detailDialogStyle}
+                        headerStyle={headerStyle}
+                        contentStyle={contentStyle}
+                        onHide={() => setDetailModal2(false)}
+                        dismissableMask
+                        draggable={false}
+                        resizable={false}
+                    >
+                        <div className="flex justify-end">
+                            <Button
+                                onClick={downloadUserDetail}
+                                icon="pi pi-download text-xl"
+                                text
+                                className={` rounded-lg p-6 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                            />
+                        </div>
+                        <DataTable
+                            data={ddnHistory}
+                            loading={false}
+                            columnFields={customerDetailColumnFields}
+                            pagination={true}
+                            totalRecords={ddnHistory.length}
+                            selectedRows={10}
+                            rowsOption={10}
+                        />
+
+                        {/* <h3 className="font-bold">نمودار سرمایه‌گذاری</h3> */}
+                        <div className="flex justify-center mt-10">
+                            <LineChart
+                                datasets={ddnHistoryChart.datasets}
+                                labels={ddnHistoryChart.labels}
+                            />
+                        </div>
+                    </S.DialogStyle>
+                    <S.DialogStyle
+                        header="ویرایش کاربر"
+                        visible={editModal}
+                        style={dialogStyle}
+                        headerStyle={headerStyle}
+                        contentStyle={contentStyle}
+                        onHide={() => setEditModal(false)}
+                        draggable={false}
+                        resizable={false}
+                        dismissableMask
+                    >
+                        <div className="flex flex-col items-center gap-10">
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="nationalCode"
+                                    value={userDetail.national_id}
+                                    onChange={(e) =>
+                                        setUserDetail((prev) => ({
+                                            ...prev,
+                                            national_id: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="nationalCode"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    کد ملی
+                                </label>
+                            </S.FloatLabelSection>
+
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="phoneNumber"
+                                    value={userDetail.phone}
+                                    onChange={(e) =>
+                                        setUserDetail((prev) => ({
+                                            ...prev,
+                                            phone: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="phoneNumber"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    شماره موبایل
+                                </label>
+                            </S.FloatLabelSection>
+
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="email"
+                                    value={userDetail.email}
+                                    onChange={(e) =>
+                                        setUserDetail((prev) => ({
+                                            ...prev,
+                                            email: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="email"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    ایمیل
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="feeRate"
+                                    value={userDetail.feeRate}
+                                    onChange={(e) =>
+                                        setUserDetail((prev) => ({
+                                            ...prev,
+                                            feeRate: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                    max={100}
+                                />
+                                <label
+                                    htmlFor="feeRate"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    نرخ کارمزد
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="marketerShare"
+                                    value={userDetail.marketerShare}
+                                    onChange={(e) =>
+                                        setUserDetail((prev) => ({
+                                            ...prev,
+                                            marketerShare: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                    max={100}
+                                />
+                                <label
+                                    htmlFor="marketerShare"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    سهم بازاریاب
+                                </label>
+                            </S.FloatLabelSection>
+                            <div className="flex justify-center gap-5">
+                                <Button
+                                    label="انصراف"
+                                    className={` rounded-lg text-red-700  ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                    outlined
+                                    severity="danger"
+                                    onClick={() => setEditModal(false)}
+                                />
+                                <Button
+                                    label="ویرایش کاربر"
+                                    onClick={() => editUserFunc()}
+                                    className={` rounded-lg  ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                    outlined
+                                />
+                            </div>
+                        </div>
+                    </S.DialogStyle>
+                </div>
+                {loading ? (
+                    <div
+                        className="spinner-container"
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: '200px',
+                        }}
+                    >
+                        <ProgressSpinner
+                            style={{ width: '50px', height: '50px' }}
+                            strokeWidth="8"
+                            fill="transparent"
+                            animationDuration=".5s"
                         />
                     </div>
-                </S.DialogStyle>
-                <S.DialogStyle
-                    header="ویرایش کاربر"
-                    visible={editModal}
-                    style={dialogStyle}
-                    headerStyle={headerStyle}
-                    contentStyle={contentStyle}
-                    onHide={() => setEditModal(false)}
-                    footer={detailFooterContent}
-                    draggable={false}
-                    resizable={false}
-                >
-                    <div className="flex flex-col items-center gap-5">
-                        {/* <S.Input
-                            value={userDetail.first_name}
-                            onChange={(e) =>
-                                setUserDetail((prev) => ({
-                                    ...prev,
-                                    first_name: e.target.value,
-                                }))
-                            }
-                            placeholder="نام کاربر"
-                        />
-                        <S.Input
-                            value={userDetail.last_name}
-                            onChange={(e) =>
-                                setUserDetail((prev) => ({
-                                    ...prev,
-                                    last_name: e.target.value,
-                                }))
-                            }
-                            placeholder="نام خانوادگی کاربر"
-                        /> */}
-                        <S.Input
-                            value={userDetail.national_id}
-                            onChange={(e) =>
-                                setUserDetail((prev) => ({
-                                    ...prev,
-                                    national_id: e.target.value,
-                                }))
-                            }
-                            keyfilter="int"
-                            placeholder="کد ملی"
-                        />
-                        <S.Input
-                            value={userDetail.phone}
-                            onChange={(e) =>
-                                setUserDetail((prev) => ({
-                                    ...prev,
-                                    phone: e.target.value,
-                                }))
-                            }
-                            keyfilter="int"
-                            placeholder="شماره موبایل"
-                        />
-                        <S.Input
-                            value={userDetail.email}
-                            onChange={(e) =>
-                                setUserDetail((prev) => ({
-                                    ...prev,
-                                    email: e.target.value,
-                                }))
-                            }
-                            placeholder="ایمیل"
-                        />
+                ) : error ? (
+                    <div
+                        className="error-message"
+                        style={{ textAlign: 'center', color: 'red' }}
+                    >
+                        {error}
                     </div>
-                </S.DialogStyle>
-            </div>
-            {loading ? (
-                <div
-                    className="spinner-container"
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '200px',
-                    }}
-                >
-                    <ProgressSpinner
-                        style={{ width: '50px', height: '50px' }}
-                        strokeWidth="8"
-                        fill="transparent"
-                        animationDuration=".5s"
+                ) : (
+                    <DataTable
+                        data={usersData}
+                        columnFields={columnFields}
+                        onDetailsClick={handleDetailsClick}
+                        onEditClick={handleEditClick}
+                        onChangeStatusClick={handleChangeStatusClick}
+                        pagination
+                        scrollHeight={tableHeight + 'px'}
                     />
-                </div>
-            ) : error ? (
-                <div
-                    className="error-message"
-                    style={{ textAlign: 'center', color: 'red' }}
-                >
-                    {error}
-                </div>
-            ) : (
-                <DataTable
-                    data={usersData}
-                    columnFields={columnFields}
-                    onDetailsClick={handleDetailsClick}
-                    onEditClick={handleEditClick}
-                    onChangeStatusClick={handleChangeStatusClick}
-                    pagination
-                />
-            )}
-        </S.Container>
+                )}
+            </S.Container>
+        </div>
     );
 };
 

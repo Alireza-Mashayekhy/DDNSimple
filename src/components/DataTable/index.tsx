@@ -31,6 +31,7 @@ interface UserTableProps {
     showRows?: boolean;
     selectedRows?: number;
     rowsOption?: number[];
+    scrollHeight?: string;
 }
 
 const DataTable: FC<UserTableProps | any> = ({
@@ -46,6 +47,7 @@ const DataTable: FC<UserTableProps | any> = ({
     selectedRows,
     rowsOption,
     onDeleteClick,
+    scrollHeight,
 }: any) => {
     const theme = useSelector(getTheme);
 
@@ -67,7 +69,7 @@ const DataTable: FC<UserTableProps | any> = ({
         rowData: any,
         col: { field: string; header: string; width: string }
     ) => {
-        if ((upload && col.field !== 'date') || col.field === 'is_active') {
+        if (upload && col.field !== 'date') {
             const hasData = rowData[col.field] === true;
             if (hasData) {
                 return (
@@ -147,19 +149,30 @@ const DataTable: FC<UserTableProps | any> = ({
             );
         }
         if (
-            field === 'change_status' &&
+            field === 'is_active' &&
             typeof onChangeStatusClick === 'function'
         ) {
-            return (
-                <Button
-                    // label="ویرایش"
-                    icon="pi pi-sliders-v"
-                    className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                    onClick={() => onChangeStatusClick(rowData)}
-                    text
-                    // outlined
-                />
-            );
+            const hasData = rowData[field] === true;
+            if (hasData) {
+                return (
+                    <i
+                        className="pi pi-check cursor-pointer"
+                        style={{
+                            color: theme === 'dark' ? '#ffffff' : '#000000',
+                            fontSize: '22px',
+                        }}
+                        onClick={() => onChangeStatusClick(rowData)}
+                    ></i>
+                );
+            } else {
+                return (
+                    <i
+                        className="pi pi-times cursor-pointer"
+                        style={{ color: '#b61616', fontSize: '22px' }}
+                        onClick={() => onChangeStatusClick(rowData)}
+                    ></i>
+                );
+            }
         }
         // Apply numberFormatter to specific fields
         if (
@@ -183,6 +196,7 @@ const DataTable: FC<UserTableProps | any> = ({
     return (
         <S.TableContainer>
             <S.StyledDataTable
+                emptyMessage="داده‌ای برای نمایش وجود ندارد."
                 value={data}
                 tableStyle={{
                     minWidth: '100%',
@@ -191,7 +205,7 @@ const DataTable: FC<UserTableProps | any> = ({
                 rows={selectedRows || 25}
                 rowsPerPageOptions={rowsOption || [5, 10, 25, 50]}
                 scrollable
-                scrollHeight="400px"
+                scrollHeight={scrollHeight || '400px'}
             >
                 {showRows && (
                     <Column
@@ -216,8 +230,7 @@ const DataTable: FC<UserTableProps | any> = ({
                             textAlign: col.align || 'center',
                         }}
                         body={
-                            (col.field !== 'ticker' && upload) ||
-                            col.field === 'is_active'
+                            col.field !== 'ticker' && upload
                                 ? (rowData) => statusBodyTemplate(rowData, col)
                                 : (rowData) => bodyTemplate(rowData, col.field)
                         }
