@@ -3,7 +3,12 @@ import DataTable from '@/components/DataTable';
 import { useSelector } from 'react-redux';
 import { getCustomersData, getStockData } from '@/selectors/state';
 import { useEffect, useState } from 'react';
-import { exportDdn, getDdnDetail, getDdnHistories } from '@/api/ddnHistories';
+import {
+    exportDdn,
+    exportDdnHistories,
+    getDdnDetail,
+    getDdnHistories,
+} from '@/api/ddnHistories';
 import { Button } from 'primereact/button';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import LineChart from '@/components/chart';
@@ -11,7 +16,8 @@ import { getTheme } from '@/redux/selectors';
 import { fetchCustomersData } from '@/dispatchers/customers';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/types';
-
+import recordBack from '@/assets/recordsBack.jpg';
+import { toast } from 'react-toastify';
 interface TickerItem {
     ticker: string;
 }
@@ -161,7 +167,7 @@ const MainContent = () => {
         useState<CustomerDetails | null>(null);
     const [chartData, setChartData] = useState<{
         labels: string[];
-        datasets: { label: string; data: number[]; borderColor: string }[];
+        datasets: { name: string; data: number[]; borderColor: string }[];
     }>({ labels: [], datasets: [] });
     const [customerDetailData, setCustomerDetailData] = useState<
         CustomerDetailTableData[]
@@ -171,6 +177,12 @@ const MainContent = () => {
     const [displayModal, setDisplayModal] = useState(false);
 
     const theme = useSelector(getTheme);
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 450);
+    useEffect(() => {
+        window.addEventListener('resize', () =>
+            setTableHeight(window.innerHeight - 450)
+        );
+    }, []);
 
     const headerStyle = {
         background: theme === 'dark' ? '#262626' : '#fff',
@@ -317,6 +329,10 @@ const MainContent = () => {
                 params.customer_name = selectedLastname;
             }
             const data = await getDdnHistories(params);
+
+            data.forEach((e) => {
+                e.total_value = (e.total_value / 1000000000).toFixed(1);
+            });
             setDdnHistories(data);
         } catch (error) {
             console.error('Error fetching DDN histories:', error);
@@ -325,6 +341,37 @@ const MainContent = () => {
             setDdnHistoryLoading(false);
         }
     };
+
+    const downloadDdnHistories = async () => {
+        const params: { [key: string]: string | boolean } = {
+            ticker: selectedTicker.ticker,
+            export: true,
+        };
+        if (selectedStockId) {
+            params.customer_stock_id = selectedStockId;
+        }
+        if (selectedNationalId) {
+            params.customer_national_id = selectedNationalId;
+        }
+        if (selectedLastname) {
+            params.customer_name = selectedLastname;
+        }
+        try {
+            const response = await exportDdnHistories(params);
+            const url = window.URL.createObjectURL(response);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'records.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.success('گزارش با موفقیت دریافت شد');
+        } catch (error) {
+            console.error('Error downloading file:', error);
+            toast.error('مشکل در دریافت گزارش');
+        }
+    };
+
     const searchNationalId = (event: { query: string }) => {
         let query = event.query;
         let filtered = customers.national_ids.filter((item) =>
@@ -358,8 +405,9 @@ const MainContent = () => {
             const chartData = response.ddn_history_chart[0];
             const datasets = Object.entries(chartData)?.map(
                 ([ticker, data]) => {
+                    console.log(data);
                     return {
-                        label: ticker,
+                        name: ticker,
                         data: data?.total_count?.reverse(),
                         borderColor: theme === 'dark' ? 'white' : 'black',
                         fill: false,
@@ -373,7 +421,7 @@ const MainContent = () => {
             );
 
             setChartData({
-                labels: chartData[maxDatesDataset.label].dates.reverse(),
+                labels: chartData[maxDatesDataset.name].dates.reverse(),
                 datasets: datasets,
             });
         }
@@ -387,134 +435,151 @@ const MainContent = () => {
     };
 
     return (
-        <S.Container>
-            <div className="flex justify-center">
-                <S.Input
-                    value={selectedTicker || ''}
-                    suggestions={filteredTickers}
-                    completeMethod={searchTicker}
-                    field="ticker"
-                    onChange={(e: { value: Ticker }) => {
-                        setSelectedTicker(e.value);
-                    }}
-                    onSelect={(e: { value: Ticker }) => {
-                        loadDdnHistories(e.value);
-                        setShowTable(true);
-                    }}
-                    panelStyle={{
-                        background: theme === 'dark' ? 'black' : 'white',
-                        color: 'red',
-                    }}
-                    placeholder="لطفاً یک نماد را انتخاب کنید."
-                />
-            </div>
-            <div className="flex items-center justify-center py-5">
-                {showTable && (
-                    <div className="items-center flex flex-wrap gap-5 justify-center">
-                        <S.Input
-                            value={selectedLastname}
-                            suggestions={filteredLastname}
-                            completeMethod={searchLastname}
-                            onChange={(e) => {
-                                setSelectedLastname(e.value);
-                            }}
-                            placeholder="نام سهامدار"
-                            panelStyle={{
-                                background:
-                                    theme === 'dark' ? 'black' : 'white',
-                                color: 'red',
-                            }}
+        <div className="relative">
+            <S.Background $url={recordBack} />
+            <S.Container>
+                <h1 className="text-right mb-10 px-10 text-4xl">
+                    سوابق دارندگان واحدهای صندوق
+                </h1>
+                <div className="flex justify-center">
+                    <S.Input
+                        value={selectedTicker || ''}
+                        suggestions={filteredTickers}
+                        completeMethod={searchTicker}
+                        field="ticker"
+                        onChange={(e: { value: Ticker }) => {
+                            setSelectedTicker(e.value);
+                        }}
+                        onSelect={(e: { value: Ticker }) => {
+                            loadDdnHistories(e.value);
+                            setShowTable(true);
+                        }}
+                        panelStyle={{
+                            background: theme === 'dark' ? 'black' : 'white',
+                            color: 'red',
+                        }}
+                        placeholder="لطفاً یک نماد را انتخاب کنید."
+                    />
+                </div>
+                <div className="flex items-center justify-center py-5">
+                    {showTable && (
+                        <div className="items-center flex flex-wrap gap-5 justify-center">
+                            <S.Input
+                                value={selectedLastname}
+                                suggestions={filteredLastname}
+                                completeMethod={searchLastname}
+                                onChange={(e) => {
+                                    setSelectedLastname(e.value);
+                                }}
+                                placeholder="نام سهامدار"
+                                panelStyle={{
+                                    background:
+                                        theme === 'dark' ? 'black' : 'white',
+                                    color: 'red',
+                                }}
+                            />
+                            <S.Input
+                                value={selectedNationalId}
+                                suggestions={filteredNationalId}
+                                completeMethod={searchNationalId}
+                                onChange={(e) => {
+                                    setSelectedNationalId(e.value);
+                                }}
+                                placeholder="کد ملی"
+                                panelStyle={{
+                                    background:
+                                        theme === 'dark' ? 'black' : 'white',
+                                    color: 'red',
+                                }}
+                            />
+                            <S.Input
+                                value={selectedStockId}
+                                suggestions={filteredStockId}
+                                completeMethod={searchStockId}
+                                onChange={(e) => {
+                                    setSelectedStockId(e.value);
+                                }}
+                                placeholder="کد بورسی"
+                                panelStyle={{
+                                    background:
+                                        theme === 'dark' ? 'black' : 'white',
+                                    color: 'red',
+                                }}
+                            />
+                            <Button
+                                label="جستجو"
+                                className={` rounded-lg py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                outlined
+                                icon="pi pi-search mx-2 text-sm"
+                                onClick={() => loadDdnHistories(selectedTicker)}
+                            />
+                        </div>
+                    )}
+                </div>
+                {!showTable ? (
+                    <div style={{ textAlign: 'center', color: 'gray' }}>
+                        لطفاً یک نماد را انتخاب کنید.
+                    </div>
+                ) : ddnHistoryLoading ? (
+                    <div
+                        className="spinner-container"
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: '200px',
+                        }}
+                    >
+                        <ProgressSpinner
+                            style={{ width: '50px', height: '50px' }}
+                            strokeWidth="8"
+                            fill="transparent"
+                            animationDuration=".5s"
                         />
-                        <S.Input
-                            value={selectedNationalId}
-                            suggestions={filteredNationalId}
-                            completeMethod={searchNationalId}
-                            onChange={(e) => {
-                                setSelectedNationalId(e.value);
-                            }}
-                            placeholder="کد ملی"
-                            panelStyle={{
-                                background:
-                                    theme === 'dark' ? 'black' : 'white',
-                                color: 'red',
-                            }}
-                        />
-                        <S.Input
-                            value={selectedStockId}
-                            suggestions={filteredStockId}
-                            completeMethod={searchStockId}
-                            onChange={(e) => {
-                                setSelectedStockId(e.value);
-                            }}
-                            placeholder="کد بورسی"
-                            panelStyle={{
-                                background:
-                                    theme === 'dark' ? 'black' : 'white',
-                                color: 'red',
-                            }}
-                        />
-                        <Button
-                            label="جستجو"
-                            className={` rounded-lg py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                            outlined
-                            icon="pi pi-search mx-2 text-sm"
-                            onClick={() => loadDdnHistories(selectedTicker)}
+                    </div>
+                ) : error ? (
+                    <div
+                        className="error-message"
+                        style={{ textAlign: 'center', color: 'red' }}
+                    >
+                        {error}
+                    </div>
+                ) : (
+                    <div className="flex flex-col">
+                        <div className="flex justify-end">
+                            <Button
+                                icon="pi pi-download text-2xl"
+                                className={` rounded-lg aspect-square p-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                text
+                                onClick={downloadDdnHistories}
+                            />
+                        </div>
+                        <DataTable
+                            data={ddnHistories}
+                            columnFields={columnFields}
+                            onDetailsClick={handleDetailsClick}
+                            pagination
+                            showRows
+                            scrollHeight={tableHeight + 'px'}
                         />
                     </div>
                 )}
-            </div>
-            {!showTable ? (
-                <div style={{ textAlign: 'center', color: 'gray' }}>
-                    لطفاً یک نماد را انتخاب کنید.
-                </div>
-            ) : ddnHistoryLoading ? (
-                <div
-                    className="spinner-container"
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '200px',
-                    }}
+                <S.DialogStyled
+                    header={headerContent}
+                    visible={displayModal}
+                    style={dialogStyle}
+                    headerStyle={headerStyle}
+                    contentStyle={contentStyle}
+                    onHide={() => setDisplayModal(false)}
+                    // footer={footerContent}
+                    draggable={false}
+                    resizable={false}
+                    dismissableMask
                 >
-                    <ProgressSpinner
-                        style={{ width: '50px', height: '50px' }}
-                        strokeWidth="8"
-                        fill="transparent"
-                        animationDuration=".5s"
-                    />
-                </div>
-            ) : error ? (
-                <div
-                    className="error-message"
-                    style={{ textAlign: 'center', color: 'red' }}
-                >
-                    {error}
-                </div>
-            ) : (
-                <DataTable
-                    data={ddnHistories}
-                    columnFields={columnFields}
-                    onDetailsClick={handleDetailsClick}
-                    pagination
-                    showRows
-                />
-            )}
-            <S.DialogStyled
-                header={headerContent}
-                visible={displayModal}
-                style={dialogStyle}
-                headerStyle={headerStyle}
-                contentStyle={contentStyle}
-                onHide={() => setDisplayModal(false)}
-                // footer={footerContent}
-                draggable={false}
-                resizable={false}
-                dismissableMask
-            >
-                {dialogContent()}
-            </S.DialogStyled>
-        </S.Container>
+                    {dialogContent()}
+                </S.DialogStyled>
+            </S.Container>
+        </div>
     );
 };
 

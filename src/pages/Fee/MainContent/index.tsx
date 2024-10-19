@@ -16,6 +16,7 @@ import moment from 'moment-jalaali';
 import { fetchCustomersData } from '@/dispatchers/customers';
 import { useDispatch } from 'react-redux';
 import { fetchFeeData as _fetchFeeData } from '@/dispatchers/fee';
+import FeeBack from '@/assets/feeBack.jpg';
 
 const wageColumnFields = [
     {
@@ -61,11 +62,19 @@ const MainContent: SFC = () => {
         useSelector(getFeeData)?.data
     );
     const [showData, setShowData] = useState(false);
+    const [key, setKey] = useState<number>(0);
 
     const tickerData = useSelector(getStockData)?.data;
     const customerData = useSelector(getCustomersData)?.data;
     const theme = useSelector(getTheme);
     const dispatch = useDispatch<AppDispatch>();
+
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 550);
+    useEffect(() => {
+        window.addEventListener('resize', () =>
+            setTableHeight(window.innerHeight - 550)
+        );
+    }, []);
 
     const getDataFunc = async () => {
         if (!customerData.length) {
@@ -93,7 +102,7 @@ const MainContent: SFC = () => {
     };
     const suggestStockId = (event: { query: string }) => {
         const query = event.query;
-        const filteredSuggestions = customerData.stock_ids
+        const filteredSuggestions = customerData.last_names
             .filter((item: any) => item.includes(query))
             .map((item: any) => item);
         setSuggestions((prev: any) => ({
@@ -119,7 +128,7 @@ const MainContent: SFC = () => {
         try {
             const params: {
                 fund: string;
-                stock_id?: string;
+                full_name?: string;
                 start_date?: string;
                 end_date?: string;
                 wage?: number;
@@ -127,7 +136,7 @@ const MainContent: SFC = () => {
                 fund: fund,
             };
             if (stockId) {
-                params.stock_id = stockId;
+                params.full_name = stockId;
             }
             if (startDate) {
                 params.start_date = convertToPersianDate(
@@ -263,99 +272,122 @@ const MainContent: SFC = () => {
     };
 
     return (
-        <S.Container>
-            <div className="change-container">
-                <div className="p-5 pt-10">
-                    <div className="flex justify-center mb-6">
-                        <S.Input
-                            value={fund}
-                            suggestions={suggestions.fund}
-                            completeMethod={suggestFund}
-                            onChange={(e) => {
-                                setFund(e.value);
-                            }}
-                            onSelect={(e) => {
-                                fetchFirstManagementWage(e.value);
-                                setShowData(true);
-                            }}
-                            placeholder="نام صندوق"
-                            panelStyle={{
-                                background:
-                                    theme === 'dark' ? 'black' : 'white',
-                                color: 'red',
-                            }}
-                        />
-                    </div>
-                    {showData && (
-                        <>
-                            <div className="flex items-center justify-center gap-2 flex-wrap">
-                                <div className="data-filter-inputs flex justify-center items-center gap-6 w-full flex-wrap">
-                                    <div className="flex  gap-2 flex-col">
-                                        <label
-                                            htmlFor="stockId"
-                                            className="w-20"
-                                        >
-                                            کدبورسی :
-                                        </label>
-                                        <S.Input
-                                            value={stockId}
-                                            suggestions={suggestions.stockId}
-                                            completeMethod={suggestStockId}
-                                            onChange={(e) =>
-                                                setStockId(e.value)
-                                            }
-                                            placeholder="کدبورسی"
-                                            panelStyle={{
-                                                background:
+        <div className="relative">
+            <S.Background $url={FeeBack} />
+            <S.Container>
+                <h1 className="text-right mb-10 px-10 text-4xl">
+                    محاسبه کارمزد مدیر
+                </h1>
+                <div className="change-container">
+                    <div className="p-5 pt-0">
+                        <div className="flex justify-center mb-6">
+                            <S.Input
+                                value={fund}
+                                suggestions={suggestions.fund}
+                                completeMethod={suggestFund}
+                                onChange={(e) => {
+                                    setFund(e.value);
+                                }}
+                                onSelect={(e) => {
+                                    fetchFirstManagementWage(e.value);
+                                    setShowData(true);
+                                }}
+                                placeholder="نام صندوق"
+                                panelStyle={{
+                                    background:
+                                        theme === 'dark' ? 'black' : 'white',
+                                    color: 'red',
+                                }}
+                            />
+                        </div>
+                        {showData && (
+                            <>
+                                <div className="flex items-center justify-center gap-2 flex-wrap">
+                                    <div className="data-filter-inputs flex justify-center items-center gap-6 w-full flex-wrap">
+                                        <div className="flex  gap-2 flex-col">
+                                            <label
+                                                htmlFor="stockId"
+                                                className="w-20"
+                                            >
+                                                نام سهامدار :
+                                            </label>
+                                            <S.Input
+                                                value={stockId}
+                                                suggestions={
+                                                    suggestions.stockId
+                                                }
+                                                completeMethod={suggestStockId}
+                                                onChange={(e) =>
+                                                    setStockId(e.value)
+                                                }
+                                                placeholder="نام سهامدار"
+                                                panelStyle={{
+                                                    background:
+                                                        theme === 'dark'
+                                                            ? 'black'
+                                                            : 'white',
+                                                    color: 'red',
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="flex  gap-2 flex-col">
+                                            <label
+                                                htmlFor="stockId"
+                                                className="whitespace-nowrap text-start"
+                                            >
+                                                نرخ کارمزد (%) :
+                                            </label>
+                                            <S.NumInput
+                                                value={wage}
+                                                onValueChange={(e) =>
+                                                    setWage(e.value ?? 0)
+                                                }
+                                                minFractionDigits={1}
+                                                maxFractionDigits={1}
+                                                step={0.5}
+                                                placeholder="نرخ کارمزد"
+                                                mode="decimal"
+                                                min={0}
+                                                max={100}
+                                            />
+                                        </div>
+                                        <div className="flex relative gap-2 flex-col">
+                                            <label className="w-20">
+                                                تاریخ :
+                                            </label>
+                                            <DatePicker
+                                                key={key}
+                                                className="z-10"
+                                                round="x4"
+                                                position="center"
+                                                range
+                                                // accentColor={theme === "dark" ? "#000000" : "#FFFFFF"}
+                                                onChange={(e) => {
+                                                    setStartDate(e.from),
+                                                        setEndDate(e.to);
+                                                }}
+                                                inputClass={
                                                     theme === 'dark'
-                                                        ? 'black'
-                                                        : 'white',
-                                                color: 'red',
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="flex  gap-2 flex-col">
-                                        <label
-                                            htmlFor="stockId"
-                                            className="whitespace-nowrap text-start"
-                                        >
-                                            نرخ کارمزد (%) :
-                                        </label>
-                                        <S.NumInput
-                                            value={wage}
-                                            onValueChange={(e) =>
-                                                setWage(e.value ?? 0)
-                                            }
-                                            minFractionDigits={1}
-                                            maxFractionDigits={1}
-                                            step={0.5}
-                                            placeholder="نرخ کارمزد"
-                                            mode="decimal"
-                                            min={0}
-                                            max={100}
-                                        />
-                                    </div>
-                                    <div className="flex  gap-2 flex-col">
-                                        <label className="w-20">تاریخ :</label>
-                                        <DatePicker
-                                            className="z-10"
-                                            round="x4"
-                                            position="center"
-                                            range
-                                            // accentColor={theme === "dark" ? "#000000" : "#FFFFFF"}
-                                            onChange={(e) => {
-                                                setStartDate(e.from),
-                                                    setEndDate(e.to);
-                                            }}
-                                            inputClass={
-                                                theme === 'dark'
-                                                    ? 'bg-[#000000] !text-[#ffffff] h-[35px] w-[230px] text-sm !px-0 text-center'
-                                                    : 'bg-[#FFFFFF] !text-[#000000] h-[35px] w-[230px] text-sm !px-0 text-center'
-                                            }
-                                            customShowDateFormat="YY/MM/DD"
-                                        />
-                                    </div>
-                                    {/* <div className="flex  gap-2 flex-col">
+                                                        ? 'bg-[#000000] !text-[#ffffff] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                                        : 'bg-[#FFFFFF] !text-[#000000] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                                }
+                                                customShowDateFormat="YY/MM/DD"
+                                            />
+                                            <Button
+                                                onClick={() => {
+                                                    setEndDate(null);
+                                                    setStartDate(null);
+                                                    setKey(
+                                                        (prevKey) => prevKey + 1
+                                                    );
+                                                }}
+                                                className="absolute left-4 top-8 aspect-square h-8 w-8 max-w-8 min-w-0 p-0 justify-center"
+                                                text
+                                            >
+                                                <i className="pi pi-times"></i>
+                                            </Button>
+                                        </div>
+                                        {/* <div className="flex  gap-2 flex-col">
                                 <label className="w-20">تاریخ پایان :</label>
                                 <DatePicker
                                     className="z-10"
@@ -370,68 +402,70 @@ const MainContent: SFC = () => {
                                     }
                                 />
                             </div> */}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex justify-center items-center mt-8 gap-2 mb-10">
-                                <Button
-                                    label="جستجو"
-                                    icon="pi pi-search ml-2 text-sm"
-                                    onClick={fetchManagementWage}
-                                    className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                                    outlined
-                                />
-                                <Button
-                                    label="دانلود"
-                                    icon="pi pi-download ml-2 text-sm"
-                                    onClick={downloadManagementWage}
-                                    className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                                    outlined
-                                />
-                            </div>
-                            {loading ? (
-                                <div
-                                    className="spinner-container"
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        height: '200px',
-                                    }}
-                                >
-                                    <ProgressSpinner
-                                        style={{
-                                            width: '50px',
-                                            height: '50px',
-                                        }}
-                                        strokeWidth="8"
-                                        fill="transparent"
-                                        animationDuration=".5s"
+                                <div className="flex justify-center items-center mt-8 gap-2 mb-10">
+                                    <Button
+                                        label="جستجو"
+                                        icon="pi pi-search ml-2 text-sm"
+                                        onClick={fetchManagementWage}
+                                        className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                        outlined
+                                    />
+                                    <Button
+                                        label="دانلود"
+                                        icon="pi pi-download ml-2 text-sm"
+                                        onClick={downloadManagementWage}
+                                        className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                        outlined
                                     />
                                 </div>
-                            ) : error ? (
-                                <div
-                                    className="error-message"
-                                    style={{
-                                        textAlign: 'center',
-                                        color: 'red',
-                                    }}
-                                >
-                                    {error}
-                                </div>
-                            ) : (
-                                <DataTable
-                                    data={wageData}
-                                    columnFields={wageColumnFields}
-                                    totalRecords={wageData.length}
-                                    pagination={true}
-                                    onDownloadClick={downloadRow}
-                                />
-                            )}
-                        </>
-                    )}
+                                {loading ? (
+                                    <div
+                                        className="spinner-container"
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            height: '200px',
+                                        }}
+                                    >
+                                        <ProgressSpinner
+                                            style={{
+                                                width: '50px',
+                                                height: '50px',
+                                            }}
+                                            strokeWidth="8"
+                                            fill="transparent"
+                                            animationDuration=".5s"
+                                        />
+                                    </div>
+                                ) : error ? (
+                                    <div
+                                        className="error-message"
+                                        style={{
+                                            textAlign: 'center',
+                                            color: 'red',
+                                        }}
+                                    >
+                                        {error}
+                                    </div>
+                                ) : (
+                                    <DataTable
+                                        data={wageData}
+                                        columnFields={wageColumnFields}
+                                        totalRecords={wageData.length}
+                                        pagination={true}
+                                        onDownloadClick={downloadRow}
+                                        scrollHeight={tableHeight + 'px'}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
-            </div>
-        </S.Container>
+            </S.Container>
+        </div>
     );
 };
 

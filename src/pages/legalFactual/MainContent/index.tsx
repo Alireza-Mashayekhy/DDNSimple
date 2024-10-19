@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DatePicker } from 'zaman';
 import { PrimeReactProvider } from 'primereact/api';
 import { Button } from 'primereact/button';
@@ -12,6 +12,7 @@ import DataTable from '@/components/DataTable';
 import { getStockData } from '@/selectors/state';
 import { exportILStatus, getChartILStatus, getILStatus } from '@/api/ilstatus';
 import LineChart from '@/components/chart';
+import LegalBack from '@/assets/legalBack.jpg';
 
 interface TickerItem {
     ticker: string;
@@ -59,13 +60,19 @@ const Investment = () => {
     const [iLStatusData, setILStatusData] = useState([]);
     const [chartData, setChartData] = useState<{
         labels: string[];
-        datasets: { label: string; data: number[]; borderColor: string }[];
+        datasets: { name: string; data: number[]; borderColor: string }[];
     }>({ labels: [], datasets: [] });
     const [displayModal, setDisplayModal] = useState(false);
 
     const theme = useSelector(getTheme);
     const tickerData = useSelector(getStockData)?.data;
 
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 450);
+    useEffect(() => {
+        window.addEventListener('resize', () =>
+            setTableHeight(window.innerHeight - 450)
+        );
+    }, []);
     const searchTicker = (event: { query: string }) => {
         let query = event.query;
         let filtered = tickerData.filter((item) => item.ticker.includes(query));
@@ -112,12 +119,12 @@ const Investment = () => {
                 labels: res[0].dates,
                 datasets: [
                     {
-                        label: 'حقیقی',
+                        name: 'حقیقی',
                         data: res[0].individual_count,
                         borderColor: theme === 'dark' ? 'white' : 'black',
                     },
                     {
-                        label: 'حقوقی',
+                        name: 'حقوقی',
                         data: res[0].legal_count,
                         borderColor: theme === 'dark' ? 'white' : 'black',
                     },
@@ -165,7 +172,7 @@ const Investment = () => {
 
     return (
         <PrimeReactProvider>
-            <>
+            <div className="relative">
                 <S.DialogStyle
                     // header="جزییات سهامدار"
                     headerStyle={headerStyle}
@@ -179,11 +186,16 @@ const Investment = () => {
                         <LineChart
                             datasets={chartData.datasets}
                             labels={chartData.labels}
-                            selectedWidth="100%"
                         />
                     </div>
                 </S.DialogStyle>
-                <div className="px-5">
+                <S.Background $url={LegalBack} />
+
+                <div className="p-5 pt-12 relative">
+                    <h1 className="text-right mb-10 px-10 text-4xl">
+                        آمار حقوقی/حقیقی
+                    </h1>
+
                     <div className="flex flex-col gap-5 items-center py-5 justify-center">
                         <div className="data-filter-inputs items-center">
                             <S.Input
@@ -279,12 +291,13 @@ const Investment = () => {
                                     columnFields={columnFields}
                                     totalRecords={iLStatusData.length}
                                     pagination
+                                    scrollHeight={tableHeight + 'px'}
                                 />
                             )}
                         </>
                     )}
                 </div>
-            </>
+            </div>
         </PrimeReactProvider>
     );
 };

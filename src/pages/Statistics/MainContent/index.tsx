@@ -2,7 +2,7 @@ import { SFC } from '@/types';
 import * as S from './Styles';
 import { Button } from 'primereact/button';
 import { DatePicker } from 'zaman';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { exportStatistics, getStatistics } from '@/api/statistics';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
@@ -12,6 +12,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import DataTable from '@/components/DataTable';
 import { getTheme } from '@/redux/selectors';
 import moment from 'moment-jalaali';
+import StatisticsBack from '@/assets/statisticsBack.jpg';
 
 interface Ticker {
     ticker: string;
@@ -67,10 +68,14 @@ const MainContent: SFC = () => {
     const [selectedTicker, setSelectedTicker] = useState<Ticker | undefined>(
         undefined
     );
+    const [investorType, setInvestorType] = useState(undefined);
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
+    const [filteredInvestor, setFilteredInvestor] = useState([]);
     const [startDate, setStartDate] = useState<string | undefined>(undefined);
     const [endDate, setEndDate] = useState<string | undefined>(undefined);
-    const [loading, setLoading] = useState(false);
+    const [loadingData, setLoading] = useState(false);
+    const [loadingDownload, setLoadingDownload] = useState(false);
+
     const [changeTabData, setChangeTabData] = useState<any>({
         change: null,
         new_investors: null,
@@ -78,9 +83,16 @@ const MainContent: SFC = () => {
     });
     const [changeActiveIndex, setChangeActiveIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
-
+    const [key, setKey] = useState<number>(0);
     const tickerData = useSelector(getStockData)?.data;
     const theme = useSelector(getTheme);
+
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 550);
+    useEffect(() => {
+        window.addEventListener('resize', () =>
+            setTableHeight(window.innerHeight - 550)
+        );
+    }, []);
 
     const searchTicker = (event: { query: string }) => {
         let query = event.query;
@@ -88,35 +100,56 @@ const MainContent: SFC = () => {
         setFilteredTickers(filtered);
     };
 
+    const searchInvestor = (event: { query: string }) => {
+        let query = event.query;
+        const items = [
+            { name: 'حقیقی', code: 'I' },
+            { name: 'حقوقی', code: 'L' },
+            { name: 'همه', code: '' },
+        ];
+        let filtered = items.filter((item) => item.name.includes(query));
+        setFilteredInvestor(filtered);
+    };
+
     const handleMainPageDownload = async () => {
         try {
+            setLoadingDownload(true);
             const params = {
                 start_date: startDate,
                 end_date: endDate,
-                ticker: selectedTicker.ticker,
+                ticker: selectedTicker?.ticker,
+                inv_type: investorType.code,
+                export: true,
             };
             const response = await exportStatistics(params);
             const url = window.URL.createObjectURL(response);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'fund_summary_report.xlsx');
+            link.setAttribute(
+                'download',
+                `گزارش_تغییرات_${selectedTicker?.ticker}_${startDate}_${endDate}.xlsx`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
+            setLoadingDownload(false);
         } catch (error) {
             console.error('Error downloading report:', error);
             toast.error('Failed to download report');
+            setLoadingDownload(false);
         }
     };
 
     const fetchStatisticsData = async () => {
         setLoading(true);
 
-        console.log(startDate, endDate, selectedTicker.ticker);
-
-        if (!startDate || !endDate || !selectedTicker.ticker) {
+        if (
+            !startDate ||
+            !endDate ||
+            !selectedTicker?.ticker ||
+            !investorType?.code
+        ) {
             setLoading(false);
-
             return;
         }
         try {
@@ -126,25 +159,28 @@ const MainContent: SFC = () => {
                 'exited_investor',
                 'hold',
             ];
-            actions.forEach(async (e) => {
+            for (const e of actions) {
                 const params = {
                     action: e,
                     ticker: selectedTicker.ticker,
                     start_date: startDate,
                     end_date: endDate,
+                    inv_type: investorType.code,
                 };
 
                 const response = await getStatistics(params);
                 console.log(response);
+
                 const newData = {
                     results: response,
                     count: response.length,
                 };
+
                 setChangeTabData((prevData: any) => ({
                     ...prevData,
                     [e]: newData,
                 }));
-            });
+            }
         } catch (error) {
             console.error('Error fetching change tab data:', error);
             setError('لطفا دوباره تلاش کنید.');
@@ -178,7 +214,7 @@ const MainContent: SFC = () => {
                         <p>{searchParamsChange.ticker}</p>
                     )}
                 </div>
-                {loading ? (
+                {loadingData ? (
                     <div
                         className="spinner-container"
                         style={{
@@ -208,6 +244,7 @@ const MainContent: SFC = () => {
                         columnFields={changeColumnFields}
                         totalRecords={data?.count || 0}
                         pagination
+                        scrollHeight={tableHeight + 'px'}
                     />
                 )}
             </div>
@@ -215,99 +252,139 @@ const MainContent: SFC = () => {
     };
 
     return (
-        <S.Container>
-            <div className="change-container">
-                <div className="pb-5 pt-10">
-                    <div className="data-filter-inputs justify-center flex items-center flex-wrap gap-y-5">
-                        <S.Input
-                            value={selectedTicker || ''}
-                            suggestions={filteredTickers}
-                            completeMethod={searchTicker}
-                            field="ticker"
-                            onChange={(e: { value: Ticker }) => {
-                                setSelectedTicker(e.value);
-                            }}
-                            placeholder="لطفاً یک نماد را انتخاب کنید."
-                            panelStyle={{
-                                background:
-                                    theme === 'dark' ? 'black' : 'white',
-                                color: 'red',
-                            }}
-                        />
-                        <div className="flex items-center">
-                            {/* <label htmlFor="" className=" mr-4">
-                                از تاریخ
-                            </label> */}
-                            <DatePicker
-                                round="x4"
-                                position="center"
-                                accentColor="#000000"
-                                className="z-10"
-                                range
-                                onChange={(e) => {
-                                    setStartDate(
-                                        convertToPersianDate(
-                                            e.from.toISOString()
-                                        )
-                                    );
-                                    setEndDate(
-                                        convertToPersianDate(e.to.toISOString())
-                                    );
-                                    console.log(e);
+        <div className="relative">
+            <S.Background $url={StatisticsBack} />
+            <S.Container>
+                <h1 className="text-right mb-10 px-10 text-4xl">
+                    آمار تغییرات
+                </h1>
+                <div className="change-container">
+                    <div className="pb-5 pt-10">
+                        <div className="data-filter-inputs justify-center flex items-center flex-wrap gap-y-5">
+                            <S.Input
+                                value={selectedTicker || ''}
+                                suggestions={filteredTickers}
+                                completeMethod={searchTicker}
+                                field="ticker"
+                                onChange={(e: { value: Ticker }) => {
+                                    setSelectedTicker(e.value);
                                 }}
-                                inputClass={
-                                    theme === 'dark'
-                                        ? 'bg-[#000000] !text-[#ffffff] h-[35px] w-[230px] text-sm !px-0 text-center'
-                                        : 'bg-[#FFFFFF] !text-[#000000] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                placeholder="لطفاً یک نماد را انتخاب کنید."
+                                panelStyle={{
+                                    background:
+                                        theme === 'dark' ? 'black' : 'white',
+                                    color: 'red',
+                                }}
+                            />
+                            <div className="flex items-center relative">
+                                <DatePicker
+                                    key={key}
+                                    round="x4"
+                                    position="center"
+                                    accentColor="#000000"
+                                    className="z-10"
+                                    range
+                                    onChange={(e) => {
+                                        setStartDate(
+                                            convertToPersianDate(
+                                                e.from.toISOString()
+                                            )
+                                        );
+                                        setEndDate(
+                                            convertToPersianDate(
+                                                e.to.toISOString()
+                                            )
+                                        );
+                                    }}
+                                    inputClass={
+                                        theme === 'dark'
+                                            ? 'bg-[#000000] !text-[#ffffff] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                            : 'bg-[#FFFFFF] !text-[#000000] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                    }
+                                    customShowDateFormat="YY/MM/DD"
+                                />
+                                <Button
+                                    onClick={() => {
+                                        setEndDate(null);
+                                        setStartDate(null);
+                                        setKey((prevKey) => prevKey + 1);
+                                    }}
+                                    className="absolute left-5 aspect-square h-8 w-8 max-w-8 min-w-0 p-0 justify-center"
+                                    text
+                                >
+                                    <i className="pi pi-times"></i>
+                                </Button>
+                            </div>
+                            <S.Input
+                                value={investorType || ''}
+                                suggestions={filteredInvestor}
+                                completeMethod={searchInvestor}
+                                onChange={(e: { value: string }) => {
+                                    setInvestorType(e.value);
+                                }}
+                                field="name"
+                                placeholder="نوع سرمایه‌گذار"
+                                panelStyle={{
+                                    background:
+                                        theme === 'dark' ? 'black' : 'white',
+                                    color: 'red',
+                                }}
+                            />
+                        </div>
+                        <div className="flex justify-center items-center mt-8 gap-2 mb-10">
+                            <Button
+                                label={loadingData ? 'درحال پردازش' : 'جستجو'}
+                                icon="pi pi-search ml-2 text-sm"
+                                onClick={fetchStatisticsData}
+                                className={` rounded-lg ${loadingData ? 'w-fit' : 'w-32'} py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                outlined
+                                disabled={loadingData}
+                            />
+                            <Button
+                                label={
+                                    loadingDownload
+                                        ? 'درحال پردازش'
+                                        : 'دانلود گزارش'
                                 }
-                                customShowDateFormat="YY/MM/DD"
+                                icon="pi pi-download ml-2 text-sm"
+                                onClick={handleMainPageDownload}
+                                className={` rounded-lg ${loadingDownload ? 'w-fit' : 'w-32'} py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                outlined
+                                disabled={loadingDownload}
                             />
                         </div>
                     </div>
-                    <div className="flex justify-center items-center mt-8 gap-2 mb-10">
-                        <Button
-                            label="جستجو"
-                            icon="pi pi-search ml-2 text-sm"
-                            onClick={() => fetchStatisticsData()}
-                            className={` rounded-lg w-32 py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                            outlined
-                        />
-                        <Button
-                            label="دانلود گزارش"
-                            icon="pi pi-download ml-2 text-sm"
-                            onClick={handleMainPageDownload}
-                            className={` rounded-lg w-32 py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                            outlined
-                        />
-                    </div>
-                </div>
 
-                <TabView
-                    activeIndex={changeActiveIndex}
-                    onTabChange={(e) => setChangeActiveIndex(e.index)}
-                    className=""
-                >
-                    <TabPanel header="آمار تغییرات دارایی">
-                        {renderChangeSubTab('آمار تغییرات دارایی', 'change')}
-                    </TabPanel>
-                    <TabPanel header="آمار ورود سهامدار">
-                        {renderChangeSubTab(
-                            'آمار ورود سهامدار',
-                            'new_investor'
-                        )}
-                    </TabPanel>
-                    <TabPanel header="آمار خروج سهامدار">
-                        {renderChangeSubTab(
-                            'آمار خروج سهامدار',
-                            'exited_investor'
-                        )}
-                    </TabPanel>
-                    <TabPanel header="بدون تغییر">
-                        {renderChangeSubTab('بدون تغییر', 'hold')}
-                    </TabPanel>
-                </TabView>
-            </div>
-        </S.Container>
+                    <TabView
+                        activeIndex={changeActiveIndex}
+                        onTabChange={(e) => setChangeActiveIndex(e.index)}
+                        className=""
+                    >
+                        <TabPanel header="آمار تغییرات دارایی">
+                            {renderChangeSubTab(
+                                'آمار تغییرات دارایی',
+                                'change'
+                            )}
+                        </TabPanel>
+                        <TabPanel header="آمار ورود سهامدار">
+                            {renderChangeSubTab(
+                                'آمار ورود سهامدار',
+                                'new_investor'
+                            )}
+                        </TabPanel>
+                        <TabPanel header="آمار خروج سهامدار">
+                            {renderChangeSubTab(
+                                'آمار خروج سهامدار',
+                                'exited_investor'
+                            )}
+                        </TabPanel>
+                        <TabPanel header="بدون تغییر">
+                            {renderChangeSubTab('بدون تغییر', 'hold')}
+                        </TabPanel>
+                    </TabView>
+                </div>
+            </S.Container>
+        </div>
     );
 };
 

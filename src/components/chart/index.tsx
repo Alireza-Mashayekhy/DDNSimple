@@ -1,91 +1,80 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend
-);
+import { getTheme } from '@/redux/selectors';
+import React from 'react';
+import Chart from 'react-apexcharts';
+import { useSelector } from 'react-redux';
 
 interface Dataset {
-    label: string;
+    name: string;
     data: number[];
-    borderColor: string;
+    color?: string;
 }
 
 interface LineChartProps {
     datasets: Dataset[];
     labels: string[];
-    selectedWidth?: number | string;
 }
 
-const LineChart: React.FC<LineChartProps> = ({
-    datasets,
-    labels,
-    selectedWidth,
-}) => {
-    const chartRef = useRef<ChartJS<'line'>>(null);
-    const [chartSize, setChartSize] = useState({
-        width: '100%',
-        height: '100%',
-    });
-
-    const chartData = {
-        labels: labels,
-        datasets: datasets,
-    };
-
-    const options = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false,
-                position: 'top' as const,
-                labels: {
-                    color: '#ffffff',
-                    font: {
-                        family: 'IranSans',
-                    },
+const LineChart: React.FC<LineChartProps> = ({ datasets, labels }) => {
+    const theme = useSelector(getTheme);
+    const chartOptions = {
+        chart: {
+            type: 'line' as 'line',
+            height: 400,
+            zoom: {
+                enabled: false,
+            },
+            toolbar: {
+                show: true,
+                tools: {
+                    download: false,
                 },
             },
         },
-        scales: {
-            x: {
-                grid: {
-                    color: '#444444',
-                },
-                ticks: {
-                    color: '#ffffff',
-                    font: {
-                        family: 'IranSans',
-                    },
+        colors: datasets.map((dataset) => dataset.color || '#00E396'), // اختصاص رنگ‌ها به داده‌ها
+        xaxis: {
+            categories: labels,
+            labels: {
+                style: {
+                    colors: theme === 'dark' ? '#ffffff' : '#000000',
+                    fontFamily: 'IranSans',
                 },
             },
-            y: {
-                grid: {
-                    color: '#444444',
+            axisBorder: {
+                color: '#444444',
+            },
+            axisTicks: {
+                color: '#444444',
+            },
+        },
+        yaxis: {
+            labels: {
+                formatter: (value) => {
+                    return value.toLocaleString('fa-IR');
                 },
-                ticks: {
-                    color: '#ffffff',
-                    font: {
-                        family: 'IranSans',
-                    },
+                style: {
+                    colors: theme === 'dark' ? '#ffffff' : '#000000',
+                    fontFamily: 'IranSans',
                 },
+            },
+        },
+        grid: {
+            borderColor: '#444444',
+        },
+        legend: {
+            show: false,
+        },
+        stroke: {
+            curve: 'straight' as 'straight', // اصلاح مقدار تایپ شده
+        },
+        tooltip: {
+            theme: theme,
+            style: {
+                fontSize: '14px',
+                fontFamily: 'IranSans',
+                colors: ['#f0f0f0'], // رنگ متون داخل tooltip
+            },
+            marker: {
+                show: true,
             },
         },
     };
@@ -93,15 +82,15 @@ const LineChart: React.FC<LineChartProps> = ({
     return (
         <div
             style={{
-                width: `100%`,
-                height: `100%`,
+                width: '100%',
+                height: '100%',
             }}
             className="flex justify-center pr-5"
         >
             <div
                 style={{ position: 'relative', width: '100%', height: '400px' }}
             >
-                <Line ref={chartRef} options={options} data={chartData} />
+                <Chart options={chartOptions} series={datasets} type="line" />
             </div>
         </div>
     );

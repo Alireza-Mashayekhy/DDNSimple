@@ -25,6 +25,7 @@ import { getInvestment } from '@/selectors/state';
 import { setSummery, setTree } from '@/redux/store/investmentData';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/types';
+import InvestmentBack from '@/assets/investmentBack.jpg';
 
 interface FundSummary {
     id: number;
@@ -88,7 +89,7 @@ const Investment = () => {
         return convertToPersianDate(yesterday);
     };
     const treeDataSelector = useSelector(getInvestment)?.tree;
-    const summeryDataSelector = useSelector(getInvestment)?.tree;
+    const summeryDataSelector = useSelector(getInvestment)?.summery;
 
     const [treeData, setTreeData] = useState<TreeNode[]>(treeDataSelector);
     const [selectedDate, setSelectedDate] = useState<string>(getDefaultDate());
@@ -107,7 +108,7 @@ const Investment = () => {
     const [totalRecords, setTotalRecords] = useState<number>(0);
     const [chartData, setChartData] = useState<{
         labels: string[];
-        datasets: { label: string; data: number[]; borderColor: string }[];
+        datasets: { name: string; data: number[]; borderColor: string }[];
     }>({ labels: [], datasets: [] });
     const [autoCompleteValues, setAutoCompleteValues] = useState({
         lastName: '',
@@ -161,7 +162,7 @@ const Investment = () => {
 
     function numberFormatter(number: number) {
         const isNegative = number < 0;
-        const absNumberStr = Math.abs(number).toString();
+        const absNumberStr = Math.abs(number)?.toString();
         const formattedNumber = absNumberStr.replace(
             /\B(?=(\d{3})+(?!\d))/g,
             ','
@@ -379,7 +380,9 @@ const Investment = () => {
         if (node.data.type === 'history') {
             const [, fundId] = node.key.split('-');
             console.log(summaryData);
-            const summary = summaryData.find((s) => s.id.toString() === fundId);
+            const summary = summaryData.find(
+                (s) => s.id?.toString() === fundId
+            );
             setSummaryDetailId(summary?.id);
             setSummaryFundName(node.data.fund);
             const investorName = summary ? summary.name : 'Unknown Investor';
@@ -400,7 +403,7 @@ const Investment = () => {
                     labels: data.chart_data[0].dates,
                     datasets: [
                         {
-                            label: 'میزان سرمایه‌گذار',
+                            name: 'میزان سرمایه‌گذار',
                             data: data.chart_data[0].share_counts,
                             borderColor: getRandomColor(),
                         },
@@ -558,16 +561,13 @@ const Investment = () => {
 
     return (
         <PrimeReactProvider>
-            <>
-                {/* <div className="flex justify-end my-4 px-5 gap-4">
-          <a
-            href="../"
-            className=" py-2 px-4 bg-blue-600 text-white rounded-[8px]"
-          >
-            صفحه DDN
-          </a>
-        </div> */}
-                <div className="px-5">
+            <div className="relative">
+                <S.Background $url={InvestmentBack} />
+
+                <div className="p-5 pt-12 relative">
+                    <h1 className="text-right mb-10 px-10 text-4xl">
+                        سرمایه گذاری
+                    </h1>
                     <S.DialogStyle
                         // header="جزییات سهامدار"
                         headerStyle={headerStyle}
@@ -719,7 +719,7 @@ const Investment = () => {
                         </S.TreeTableStyle>
                     )}
                 </div>
-            </>
+            </div>
         </PrimeReactProvider>
     );
 };
