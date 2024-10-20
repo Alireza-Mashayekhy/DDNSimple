@@ -205,7 +205,7 @@ const MainContent: SFC = () => {
 
     const downloadRow = async (e) => {
         console.log(e);
-        const params: { [key: string]: string | number } = {
+        const params: { [key: string]: string | number | boolean } = {
             fund: e.ticker,
             stock_id: e.stock_id,
             start_date: startDate
@@ -214,6 +214,7 @@ const MainContent: SFC = () => {
             end_date: endDate
                 ? convertToPersianDate(endDate?.toISOString())
                 : '',
+            export: true,
         };
         params.wage = e.wage || wage || 0.5;
 
@@ -239,8 +240,9 @@ const MainContent: SFC = () => {
             return;
         }
 
-        const params: { [key: string]: string | number } = {
+        const params: { [key: string]: string | number | boolean } = {
             fund: fund,
+            export: true,
         };
         if (wage) {
             params.wage = wage;

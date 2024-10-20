@@ -193,7 +193,7 @@ const Investment = () => {
 
                 <div className="p-5 pt-12 relative">
                     <h1 className="text-right mb-10 px-10 text-4xl">
-                        آمار حقوقی/حقیقی
+                        آمار سرمایه‌گذاران حقیقی و حقوقی
                     </h1>
 
                     <div className="flex flex-col gap-5 items-center py-5 justify-center">
