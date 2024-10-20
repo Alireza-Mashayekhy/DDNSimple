@@ -207,7 +207,7 @@ const MainContent: SFC = () => {
         console.log(e);
         const params: { [key: string]: string | number | boolean } = {
             fund: e.ticker,
-            stock_id: e.stock_id,
+            full_name: e.full_name,
             start_date: startDate
                 ? convertToPersianDate(startDate?.toISOString())
                 : '',
@@ -248,7 +248,7 @@ const MainContent: SFC = () => {
             params.wage = wage;
         }
         if (stockId) {
-            params.stock_id = stockId;
+            params.full_name = stockId;
         }
         if (startDate) {
             params.start_date = convertToPersianDate(startDate.toISOString());

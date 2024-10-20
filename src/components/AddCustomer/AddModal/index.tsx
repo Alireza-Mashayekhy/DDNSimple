@@ -42,7 +42,7 @@ const AddModal: SFC<AddCustomerModalProps> = ({ visible, setVisibleProp }) => {
                 toast(error.message);
             });
 
-        getCustomersData(dispatch)
+        getCustomersData()
             .then((res) => {
                 setCustomers(res?.data);
             })
