@@ -13,6 +13,7 @@ import DataTable from '@/components/DataTable';
 import { getTheme } from '@/redux/selectors';
 import moment from 'moment-jalaali';
 import StatisticsBack from '@/assets/statisticsBack.jpg';
+import { Dropdown } from 'primereact/dropdown';
 
 interface Ticker {
     ticker: string;
@@ -68,7 +69,6 @@ const MainContent: SFC = () => {
     const [selectedTicker, setSelectedTicker] = useState<Ticker | undefined>(
         undefined
     );
-    const [investorType, setInvestorType] = useState(undefined);
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
     const [filteredInvestor, setFilteredInvestor] = useState([]);
     const [startDate, setStartDate] = useState<string | undefined>(undefined);
@@ -99,6 +99,13 @@ const MainContent: SFC = () => {
         let filtered = tickerData.filter((item) => item.ticker.includes(query));
         setFilteredTickers(filtered);
     };
+
+    const investorTypeList = [
+        { name: 'حقیقی', code: 'I' },
+        { name: 'حقوقی', code: 'L' },
+        { name: 'همه', code: '' },
+    ];
+    const [investorType, setInvestorType] = useState(investorTypeList[2]);
 
     const searchInvestor = (event: { query: string }) => {
         let query = event.query;
@@ -315,15 +322,14 @@ const MainContent: SFC = () => {
                                     <i className="pi pi-times"></i>
                                 </Button>
                             </div>
-                            <S.Input
-                                value={investorType || ''}
-                                suggestions={filteredInvestor}
-                                completeMethod={searchInvestor}
-                                onChange={(e: { value: string }) => {
-                                    setInvestorType(e.value);
-                                }}
-                                field="name"
+
+                            <S.DropdownStyle
+                                value={investorType}
+                                onChange={(e) => setInvestorType(e.value)}
+                                options={investorTypeList}
+                                optionLabel="name"
                                 placeholder="نوع سرمایه‌گذار"
+                                className="w-48"
                                 panelStyle={{
                                     background:
                                         theme === 'dark' ? 'black' : 'white',

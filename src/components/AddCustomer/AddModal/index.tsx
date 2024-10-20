@@ -1,3 +1,13 @@
+<<<<<<< HEAD
+import { AppDispatch, SFC } from '@/types';
+import * as S from './Styles';
+import { useEffect, useState } from 'react';
+import { addCustomer, getCustomersData, getTickers } from '@/api/customerData';
+import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { getTheme } from '@/redux/selectors';
+=======
 import { AppDispatch, SFC } from "@/types";
 import * as S from "./Styles";
 import { useEffect, useState } from "react";
@@ -6,6 +16,7 @@ import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { getTheme } from "@/redux/selectors";
+>>>>>>> c18f266dacf7b592727fd385468429e6a24ab17d
 
 export interface AddCustomerModalProps {
     visible: boolean;
@@ -22,16 +33,7 @@ const AddModal: SFC<AddCustomerModalProps> = ({ visible, setVisibleProp }) => {
     const [customers, setCustomers] = useState(null);
     const [filteredCustomers, setFilteredCustomers] = useState([]);
 
-  const dispatch = useDispatch<AppDispatch>();
-
-  useEffect(() => {
-    getTickers()
-      .then((res) => {
-        setTickers(res?.data);
-      })
-      .catch((error) => {
-        toast(error.message);
-      });
+    const dispatch = useDispatch<AppDispatch>();
 
     useEffect(() => {
         getTickers()
@@ -208,6 +210,8 @@ const AddModal: SFC<AddCustomerModalProps> = ({ visible, setVisibleProp }) => {
             </S.InputsContainer>
         </S.Container>
     );
+<<<<<<< HEAD
+=======
     setFilteredTickers(filtered);
   };
 
@@ -351,6 +355,7 @@ const AddModal: SFC<AddCustomerModalProps> = ({ visible, setVisibleProp }) => {
       </S.InputsContainer>
     </S.Container>
   );
+>>>>>>> c18f266dacf7b592727fd385468429e6a24ab17d
 };
 
 export default AddModal;
