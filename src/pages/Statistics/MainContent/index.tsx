@@ -119,6 +119,15 @@ const MainContent: SFC = () => {
     };
 
     const handleMainPageDownload = async () => {
+        if (
+            !startDate ||
+            !endDate ||
+            !selectedTicker?.ticker ||
+            !investorType?.code
+        ) {
+            toast.error('لطفا تمامی مقادیر را پر کنید.');
+            return;
+        }
         try {
             setLoadingDownload(true);
             const params = {
