@@ -1,5 +1,6 @@
 import { inputStyle } from '@/styles';
 import { AutoComplete } from 'primereact/autocomplete';
+import { Dropdown } from 'primereact/dropdown';
 import styled from 'styled-components';
 
 export const Container = styled.div`
@@ -28,4 +29,22 @@ export const Background = styled.div<{ $url: string }>`
     position: absolute;
     width: 100%;
     height: 50vh;
+`;
+
+export const DropdownStyle = styled(Dropdown)`
+    ${inputStyle};
+    height: 35px;
+    overflow: hidden;
+    border: 1px solid ${({ theme }) => theme.textColorSecondary};
+    background-color: ${({ theme }) => theme.primary} !important;
+    .p-dropdown-label {
+        padding: 0.3rem 1rem !important;
+        height: 100%;
+        border-radius: 0px !important;
+    }
+    .p-dropdown-trigger {
+        background-color: ${({ theme }) => theme.primary} !important;
+        color: ${({ theme }) => theme.textColor} !important;
+        border-radius: 0px !important;
+    }
 `;
