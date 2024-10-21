@@ -336,9 +336,7 @@ const MainContent = () => {
                 e.total_value = (e.total_value / 1000000000).toFixed(1);
             });
             setDdnHistories(data);
-            if (data.length) {
-                setDdnHistoryLoading(false);
-            }
+            setDdnHistoryLoading(false);
         } catch (error) {
             console.error('Error fetching DDN histories:', error);
             setError('لطفا دوباره تلاش کنید.');
