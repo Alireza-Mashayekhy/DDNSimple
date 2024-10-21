@@ -514,6 +514,7 @@ const MainContent = () => {
                                 outlined
                                 icon="pi pi-search mx-2 text-sm"
                                 onClick={() => loadDdnHistories(selectedTicker)}
+                                disabled={ddnHistoryLoading}
                             />
                         </div>
                     )}
