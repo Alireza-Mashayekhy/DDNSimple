@@ -19,6 +19,7 @@ const LineChart: React.FC<LineChartProps> = ({ datasets, labels }) => {
         chart: {
             type: 'line' as 'line',
             height: 400,
+            background: theme === 'dark' ? '#262626' : '#F0F2F1',
             zoom: {
                 enabled: false,
             },

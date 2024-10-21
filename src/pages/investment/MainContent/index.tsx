@@ -98,6 +98,7 @@ const Investment = () => {
     }>({});
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [loadingDownload, setLoadingDownload] = useState(false);
     const [displayModal, setDisplayModal] = useState(false);
     const [selectedShareholder, setSelectedShareholder] =
         useState<ShareholderDetails | null>(null);
@@ -271,6 +272,7 @@ const Investment = () => {
     }, [treeData, sortField, sortOrder, sortData]);
 
     const handleMainPageDownload = async () => {
+        setLoadingDownload(true);
         const summaryParams = {
             share_holder_histories__date: selectedDate,
             search: autoCompleteValues.lastName.toLowerCase(),
@@ -288,9 +290,11 @@ const Investment = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
+            setLoadingDownload(false);
         } catch (error) {
             console.error('Error downloading report:', error);
             toast.error('خطا در دریافت فایل . لطفا دوباره تلاش کنید');
+            setLoadingDownload(false);
         }
     };
 
@@ -498,10 +502,10 @@ const Investment = () => {
                 </div>
                 <div className="flex justify-end items-center mb-5">
                     <Button
-                        className={` rounded-lg w-32 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                        className={` rounded-lg aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
                         outlined
-                        label="دانلود"
-                        icon="pi pi-download ml-2"
+                        // label="دانلود"
+                        icon="pi pi-download "
                         onClick={handleModalDownload}
                     />
                 </div>
@@ -611,18 +615,22 @@ const Investment = () => {
                         </div>
                         <div className="flex gap-5">
                             <Button
-                                label="جستجو"
+                                label={loading ? 'در حال پردازش' : 'جستجو'}
                                 icon="pi pi-search ml-2 text-sm"
                                 onClick={handleSearch}
-                                className={` rounded-lg w-28 py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                className={` rounded-lg ${loading ? 'w-auto' : 'w-28'} py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
                                 outlined
+                                disabled={loading}
                             />
                             <Button
-                                label="دانلود"
+                                label={
+                                    loadingDownload ? 'در حال پردازش' : 'دانلود'
+                                }
                                 icon="pi pi-download ml-2 text-sm"
                                 onClick={handleMainPageDownload}
-                                className={` rounded-lg w-28 py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                className={` rounded-lg ${loadingDownload ? 'w-auto' : 'w-28'} py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
                                 outlined
+                                disabled={loadingDownload}
                             />
                         </div>
                     </div>
