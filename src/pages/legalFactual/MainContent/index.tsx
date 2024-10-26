@@ -50,8 +50,8 @@ const columnFields = [
 ];
 const Investment = () => {
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
-    const [selectedTicker, setSelectedTicker] = useState<Ticker | undefined>(
-        undefined
+    const [selectedTicker, setSelectedTicker] = useState<string | undefined>(
+        'سیناد'
     );
 
     const [error, setError] = useState<string | null>(null);
@@ -65,7 +65,7 @@ const Investment = () => {
     const [displayModal, setDisplayModal] = useState(false);
 
     const theme = useSelector(getTheme);
-    const tickerData = useSelector(getStockData)?.data;
+    const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
 
     const [tableHeight, setTableHeight] = useState(window.innerHeight - 450);
     useEffect(() => {
@@ -95,7 +95,7 @@ const Investment = () => {
         setError(null);
         setLoading(true);
         try {
-            const res = await getILStatus({ ticker: ticker.ticker });
+            const res = await getILStatus({ ticker: ticker });
             res.forEach((e) => {
                 e.individual_count = numberFormatter(e.individual_count);
                 e.individual_total_sum = numberFormatter(
@@ -112,9 +112,14 @@ const Investment = () => {
         }
     };
 
+    useEffect(() => {
+        fetchData('سیناد');
+        fetchChart('سیناد');
+    }, []);
+
     const fetchChart = async (ticker) => {
         try {
-            const res = await getChartILStatus({ ticker: ticker.ticker });
+            const res = await getChartILStatus({ ticker: ticker });
             const chartData = {
                 labels: res[0].dates,
                 datasets: [
@@ -140,7 +145,7 @@ const Investment = () => {
     const downloadData = async () => {
         try {
             const params = {
-                ticker: selectedTicker.ticker,
+                ticker: selectedTicker,
             };
             const response = await exportILStatus(params);
             const url = window.URL.createObjectURL(response);
@@ -198,15 +203,11 @@ const Investment = () => {
 
                     <div className="flex flex-col gap-5 items-center py-5 justify-center">
                         <div className="data-filter-inputs items-center">
-                            <S.Input
+                            <S.DropDownStyle
+                                options={tickerData}
                                 value={selectedTicker || ''}
-                                suggestions={filteredTickers}
-                                completeMethod={searchTicker}
-                                field="ticker"
-                                onChange={(e: { value: Ticker }) => {
+                                onChange={(e: { value: string }) => {
                                     setSelectedTicker(e.value);
-                                }}
-                                onSelect={(e: { value: Ticker }) => {
                                     fetchData(e.value);
                                     fetchChart(e.value);
                                     setShowTable(true);
@@ -218,84 +219,80 @@ const Investment = () => {
                                 }}
                                 placeholder="لطفاً یک نماد را انتخاب کنید."
                             />
-                            {showTable && (
-                                <>
-                                    <label htmlFor="" className=" mr-4 ml-2">
-                                        تاریخ
-                                    </label>
+                            <>
+                                <label htmlFor="" className=" mr-4 ml-2">
+                                    تاریخ
+                                </label>
 
-                                    <DatePicker
-                                        round="x4"
-                                        position="center"
-                                        className="z-10"
-                                        onChange={(e) => handleDateChange(e)}
-                                        inputClass={
-                                            theme === 'dark'
-                                                ? 'bg-[#000000] !text-[#ffffff] !mx-0 h-[35px] w-[190px] text-sm'
-                                                : 'bg-[#FFFFFF] !text-[#000000] !mx-0 h-[35px] w-[190px] text-sm'
-                                        }
-                                    />
-                                </>
-                            )}
+                                <DatePicker
+                                    round="x4"
+                                    position="center"
+                                    className="z-10"
+                                    onChange={(e) => handleDateChange(e)}
+                                    inputClass={
+                                        theme === 'dark'
+                                            ? 'bg-[#000000] !text-[#ffffff] !mx-0 h-[35px] w-[190px] text-sm'
+                                            : 'bg-[#FFFFFF] !text-[#000000] !mx-0 h-[35px] w-[190px] text-sm'
+                                    }
+                                />
+                            </>
                         </div>
                     </div>
-                    {showTable && (
-                        <>
-                            <div className="flex gap-2 justify-end mb-5">
-                                <Button
-                                    icon="pi pi-chart-line text-2xl"
-                                    className={` rounded-lg aspect-square p-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                                    text
-                                    onClick={() => setDisplayModal(true)}
-                                />
-                                <Button
-                                    icon="pi pi-download text-2xl"
-                                    className={` rounded-lg aspect-square p-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                                    text
-                                    onClick={downloadData}
+                    <>
+                        <div className="flex gap-2 justify-end mb-5">
+                            <Button
+                                icon="pi pi-chart-line text-2xl"
+                                className={` rounded-lg aspect-square p-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                text
+                                onClick={() => setDisplayModal(true)}
+                            />
+                            <Button
+                                icon="pi pi-download text-2xl"
+                                className={` rounded-lg aspect-square p-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                text
+                                onClick={downloadData}
+                            />
+                        </div>
+                        {loading ? (
+                            <div
+                                className="spinner-container"
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    height: '200px',
+                                }}
+                            >
+                                <ProgressSpinner
+                                    style={{
+                                        width: '50px',
+                                        height: '50px',
+                                    }}
+                                    strokeWidth="8"
+                                    fill="transparent"
+                                    animationDuration=".5s"
                                 />
                             </div>
-                            {loading ? (
-                                <div
-                                    className="spinner-container"
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        height: '200px',
-                                    }}
-                                >
-                                    <ProgressSpinner
-                                        style={{
-                                            width: '50px',
-                                            height: '50px',
-                                        }}
-                                        strokeWidth="8"
-                                        fill="transparent"
-                                        animationDuration=".5s"
-                                    />
-                                </div>
-                            ) : error ? (
-                                <div
-                                    className="error-message"
-                                    style={{
-                                        textAlign: 'center',
-                                        color: 'red',
-                                    }}
-                                >
-                                    {error}
-                                </div>
-                            ) : (
-                                <DataTable
-                                    data={iLStatusData}
-                                    columnFields={columnFields}
-                                    totalRecords={iLStatusData.length}
-                                    pagination
-                                    scrollHeight={tableHeight + 'px'}
-                                />
-                            )}
-                        </>
-                    )}
+                        ) : error ? (
+                            <div
+                                className="error-message"
+                                style={{
+                                    textAlign: 'center',
+                                    color: 'red',
+                                }}
+                            >
+                                {error}
+                            </div>
+                        ) : (
+                            <DataTable
+                                data={iLStatusData}
+                                columnFields={columnFields}
+                                totalRecords={iLStatusData.length}
+                                pagination
+                                scrollHeight={tableHeight + 'px'}
+                            />
+                        )}
+                    </>
                 </div>
             </div>
         </PrimeReactProvider>

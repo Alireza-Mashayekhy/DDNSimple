@@ -1,9 +1,10 @@
 import { inputStyle } from '@/styles';
-import { primeReactTreeTableStyle } from '@/styles/mixins';
+import { dropDownStyle, primeReactTreeTableStyle } from '@/styles/mixins';
 import { AutoComplete } from 'primereact/autocomplete';
 import styled from 'styled-components';
 import { TreeTable } from 'primereact/treetable';
 import { Dialog } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
 
 export const Container = styled.div`
     padding: 10px;
@@ -39,4 +40,8 @@ export const Background = styled.div<{ $url: string }>`
     position: absolute;
     width: 100%;
     height: 60vh;
+`;
+
+export const DropDownStyle = styled(Dropdown)`
+    ${dropDownStyle}
 `;

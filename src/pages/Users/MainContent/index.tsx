@@ -73,11 +73,11 @@ const columnFields = [
         header: 'ویرایش',
         width: '10%',
     },
-    // {
-    //     field: 'change_status',
-    //     header: 'تغییر وضعیت',
-    //     width: '10%',
-    // },
+    {
+        field: 'fee_rate',
+        header: 'نرخ کارمزد',
+        width: '10%',
+    },
 ];
 
 const DetailColumnFields = [
@@ -157,6 +157,8 @@ const MainContent: SFC = () => {
         is_active: true,
         marketerShare: '',
         feeRate: '',
+        wage_percent: '',
+        marketing_percent: '',
     });
     const [newUser, setNewUser] = useState({
         first_name: '',
@@ -165,6 +167,8 @@ const MainContent: SFC = () => {
         phone: '',
         email: '',
         is_active: true,
+        wage_percent: '',
+        marketing_percent: '',
     });
     const [usersData, setUserData] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -268,6 +272,14 @@ const MainContent: SFC = () => {
                 national_id: userDetail.national_id,
                 phone: userDetail.phone,
                 email: userDetail.email,
+                marketerShare: userDetail.marketerShare,
+                feeRate: userDetail.feeRate,
+                commissions: [
+                    {
+                        wage_percent: userDetail.wage_percent,
+                        marketing_percent: userDetail.marketing_percent,
+                    },
+                ],
             };
             await editUser(dispatch, data.national_id, data);
             toast.success('کاربر با موفقیت ویرایش شد.');
@@ -301,13 +313,28 @@ const MainContent: SFC = () => {
             !newUser.first_name ||
             !newUser.last_name ||
             !newUser.national_id ||
-            !newUser.phone
+            !newUser.phone ||
+            !newUser.wage_percent ||
+            !newUser.marketing_percent
         ) {
             toast.error('لطفا تمامی مقادیر را پر کنید.');
             return;
         }
         try {
-            await createUsersList(dispatch, newUser);
+            const data = {
+                email: newUser.email,
+                first_name: newUser.first_name,
+                last_name: newUser.last_name,
+                national_id: newUser.national_id,
+                phone: newUser.phone,
+                commissions: [
+                    {
+                        wage_percent: newUser.wage_percent,
+                        marketing_percent: newUser.marketing_percent,
+                    },
+                ],
+            };
+            await createUsersList(dispatch, data);
             toast.success('کاربر با موفقیت ایجاد شد.');
             setAddUserModal(false);
             Promise.all([dispatch(fetchUsersList())]);
@@ -688,6 +715,44 @@ const MainContent: SFC = () => {
                                     ایمیل
                                 </label>
                             </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="email"
+                                    value={newUser.wage_percent}
+                                    onChange={(e) =>
+                                        setNewUser((prev) => ({
+                                            ...prev,
+                                            wage_percent: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="email"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    درصد کارمزد
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="email"
+                                    value={newUser.marketing_percent}
+                                    onChange={(e) =>
+                                        setNewUser((prev) => ({
+                                            ...prev,
+                                            marketing_percent: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="email"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    درصد بازاریاب
+                                </label>
+                            </S.FloatLabelSection>
                             <div className="flex justify-center gap-5">
                                 <Button
                                     label="انصراف"
@@ -891,6 +956,44 @@ const MainContent: SFC = () => {
                                     className="text-right right-0 bg-inherit"
                                 >
                                     سهم بازاریاب
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="email"
+                                    value={userDetail.wage_percent}
+                                    onChange={(e) =>
+                                        setUserDetail((prev) => ({
+                                            ...prev,
+                                            wage_percent: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="email"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    درصد کارمزد
+                                </label>
+                            </S.FloatLabelSection>
+                            <S.FloatLabelSection>
+                                <S.FloatLabelInput
+                                    id="email"
+                                    value={userDetail.marketing_percent}
+                                    onChange={(e) =>
+                                        setUserDetail((prev) => ({
+                                            ...prev,
+                                            marketing_percent: e.target.value,
+                                        }))
+                                    }
+                                    keyfilter="int"
+                                />
+                                <label
+                                    htmlFor="email"
+                                    className="text-right right-0 bg-inherit"
+                                >
+                                    درصد بازاریاب
                                 </label>
                             </S.FloatLabelSection>
                             <div className="flex justify-center gap-5">

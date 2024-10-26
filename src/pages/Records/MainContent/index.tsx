@@ -18,6 +18,7 @@ import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/types';
 import recordBack from '@/assets/recordsBack.jpg';
 import { toast } from 'react-toastify';
+import { DatePicker } from 'zaman';
 interface TickerItem {
     ticker: string;
 }
@@ -151,8 +152,8 @@ const dialogStyle = {
 };
 
 const MainContent = () => {
-    const [selectedTicker, setSelectedTicker] = useState<Ticker | undefined>(
-        undefined
+    const [selectedTicker, setSelectedTicker] = useState<string | undefined>(
+        'سیناد'
     );
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
     const [ddnHistoryLoading, setDdnHistoryLoading] = useState(false);
@@ -185,6 +186,8 @@ const MainContent = () => {
             setTableHeight(window.innerHeight - 450)
         );
     }, []);
+    const [key, setKey] = useState<number>(0);
+    const [selectedDate, setDate] = useState<Date | null>(null);
 
     const headerStyle = {
         background: theme === 'dark' ? '#262626' : '#fff',
@@ -270,7 +273,7 @@ const MainContent = () => {
             console.error('selectedTicker is undefined');
             return;
         }
-        const params = { ticker: selectedTicker.ticker };
+        const params = { ticker: selectedTicker };
         const response = await exportDdn(nationalId, params);
         const url = window.URL.createObjectURL(response);
         const link = document.createElement('a');
@@ -282,7 +285,7 @@ const MainContent = () => {
         window.URL.revokeObjectURL(url);
     };
 
-    const tickerData = useSelector(getStockData)?.data;
+    const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
     const customers = useSelector(getCustomersData)?.data;
 
     const dispatch = useDispatch<AppDispatch>();
@@ -319,7 +322,7 @@ const MainContent = () => {
             setDdnHistoryLoading(true);
 
             const params: { [key: string]: string } = {
-                ticker: ticker.ticker,
+                ticker: ticker,
             };
             if (selectedStockId) {
                 params.customer_stock_id = selectedStockId;
@@ -344,9 +347,13 @@ const MainContent = () => {
         }
     };
 
+    useEffect(() => {
+        loadDdnHistories('سیناد');
+    }, []);
+
     const downloadDdnHistories = async () => {
         const params: { [key: string]: string | boolean } = {
-            ticker: selectedTicker.ticker,
+            ticker: selectedTicker,
             export: true,
         };
         if (selectedStockId) {
@@ -394,7 +401,7 @@ const MainContent = () => {
             console.error('selectedTicker is undefined');
             return;
         }
-        const params = { ticker: selectedTicker.ticker };
+        const params = { ticker: selectedTicker };
         const response: CustomerDetails = await getDdnDetail(
             detail.national_id,
             params
@@ -444,15 +451,11 @@ const MainContent = () => {
                     سوابق دارندگان واحدهای صندوق
                 </h1>
                 <div className="flex justify-center">
-                    <S.Input
+                    <S.DropDownStyle
+                        options={tickerData}
                         value={selectedTicker || ''}
-                        suggestions={filteredTickers}
-                        completeMethod={searchTicker}
-                        field="ticker"
-                        onChange={(e: { value: Ticker }) => {
+                        onChange={(e: { value: string }) => {
                             setSelectedTicker(e.value);
-                        }}
-                        onSelect={(e: { value: Ticker }) => {
                             loadDdnHistories(e.value);
                             setShowTable(true);
                         }}
@@ -464,66 +467,87 @@ const MainContent = () => {
                     />
                 </div>
                 <div className="flex items-center justify-center py-5">
-                    {showTable && (
-                        <div className="items-center flex flex-wrap gap-5 justify-center">
-                            <S.Input
-                                value={selectedLastname}
-                                suggestions={filteredLastname}
-                                completeMethod={searchLastname}
+                    <div className="items-center flex flex-wrap gap-5 justify-center">
+                        <S.Input
+                            value={selectedLastname}
+                            suggestions={filteredLastname}
+                            completeMethod={searchLastname}
+                            onChange={(e) => {
+                                setSelectedLastname(e.value);
+                            }}
+                            placeholder="نام سهامدار"
+                            panelStyle={{
+                                background:
+                                    theme === 'dark' ? 'black' : 'white',
+                                color: 'red',
+                            }}
+                        />
+                        <S.Input
+                            value={selectedNationalId}
+                            suggestions={filteredNationalId}
+                            completeMethod={searchNationalId}
+                            onChange={(e) => {
+                                setSelectedNationalId(e.value);
+                            }}
+                            placeholder="کد ملی"
+                            panelStyle={{
+                                background:
+                                    theme === 'dark' ? 'black' : 'white',
+                                color: 'red',
+                            }}
+                        />
+                        <S.Input
+                            value={selectedStockId}
+                            suggestions={filteredStockId}
+                            completeMethod={searchStockId}
+                            onChange={(e) => {
+                                setSelectedStockId(e.value);
+                            }}
+                            placeholder="کد بورسی"
+                            panelStyle={{
+                                background:
+                                    theme === 'dark' ? 'black' : 'white',
+                                color: 'red',
+                            }}
+                        />
+                        <div className="flex relative gap-2 flex-col">
+                            <DatePicker
+                                key={key}
+                                className="z-10"
+                                round="x4"
+                                position="center"
                                 onChange={(e) => {
-                                    setSelectedLastname(e.value);
+                                    setDate(e);
                                 }}
-                                placeholder="نام سهامدار"
-                                panelStyle={{
-                                    background:
-                                        theme === 'dark' ? 'black' : 'white',
-                                    color: 'red',
-                                }}
-                            />
-                            <S.Input
-                                value={selectedNationalId}
-                                suggestions={filteredNationalId}
-                                completeMethod={searchNationalId}
-                                onChange={(e) => {
-                                    setSelectedNationalId(e.value);
-                                }}
-                                placeholder="کد ملی"
-                                panelStyle={{
-                                    background:
-                                        theme === 'dark' ? 'black' : 'white',
-                                    color: 'red',
-                                }}
-                            />
-                            <S.Input
-                                value={selectedStockId}
-                                suggestions={filteredStockId}
-                                completeMethod={searchStockId}
-                                onChange={(e) => {
-                                    setSelectedStockId(e.value);
-                                }}
-                                placeholder="کد بورسی"
-                                panelStyle={{
-                                    background:
-                                        theme === 'dark' ? 'black' : 'white',
-                                    color: 'red',
-                                }}
+                                inputClass={
+                                    theme === 'dark'
+                                        ? 'bg-[#000000] !text-[#ffffff] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                        : 'bg-[#FFFFFF] !text-[#000000] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                }
+                                customShowDateFormat="YY/MM/DD"
                             />
                             <Button
-                                label="جستجو"
-                                className={` rounded-lg py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                                outlined
-                                icon="pi pi-search mx-2 text-sm"
-                                onClick={() => loadDdnHistories(selectedTicker)}
-                                disabled={ddnHistoryLoading}
-                            />
+                                onClick={() => {
+                                    setDate(null);
+                                    setKey((prevKey) => prevKey + 1);
+                                }}
+                                className="absolute left-2 top-0 aspect-square h-8 w-8 max-w-8 min-w-0 p-0 justify-center"
+                                text
+                            >
+                                <i className="pi pi-times"></i>
+                            </Button>
                         </div>
-                    )}
-                </div>
-                {!showTable ? (
-                    <div style={{ textAlign: 'center', color: 'gray' }}>
-                        لطفاً یک نماد را انتخاب کنید.
+                        <Button
+                            label="جستجو"
+                            className={` rounded-lg py-2 text-sm ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                            outlined
+                            icon="pi pi-search mx-2 text-sm"
+                            onClick={() => loadDdnHistories(selectedTicker)}
+                            disabled={ddnHistoryLoading}
+                        />
                     </div>
-                ) : ddnHistoryLoading ? (
+                </div>
+                {ddnHistoryLoading ? (
                     <div
                         className="spinner-container"
                         style={{

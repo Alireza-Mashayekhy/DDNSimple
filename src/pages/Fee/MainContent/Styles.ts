@@ -1,6 +1,9 @@
 import { inputStyle } from '@/styles';
+import { dropDownStyle } from '@/styles/mixins';
 import { AutoComplete } from 'primereact/autocomplete';
+import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
+import { InputText } from 'primereact/inputtext';
 import styled from 'styled-components';
 
 export const Container = styled.div`
@@ -16,6 +19,23 @@ export const Input = styled(AutoComplete)`
 
 export const NumInput = styled(InputNumber)`
     ${inputStyle}
+`;
+
+export const DropDownStyle = styled(Dropdown)`
+    ${dropDownStyle}
+`;
+
+export const TextInput = styled(InputText)`
+    background-color: ${({ theme }) => theme.primary} !important;
+    color: ${({ theme }) => theme.textColor} !important;
+    margin: 0 !important;
+    width: 190px;
+    height: 35px;
+    font-size: 0.875rem;
+    &::placeholder {
+        color: ${({ theme }) => theme.hoverText};
+        opacity: 1;
+    }
 `;
 
 export const Background = styled.div<{ $url: string }>`

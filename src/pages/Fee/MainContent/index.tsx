@@ -47,7 +47,7 @@ const wageColumnFields = [
 ];
 
 const MainContent: SFC = () => {
-    const [fund, setFund] = useState('');
+    const [fund, setFund] = useState<string | undefined>('سیناد');
     const [suggestions, setSuggestions] = useState({
         stockId: [],
         fund: [],
@@ -61,18 +61,21 @@ const MainContent: SFC = () => {
     const [wageData, setWageData] = useState<any[]>(
         useSelector(getFeeData)?.data
     );
+    const [newWageData, setNewWageData] = useState<any[]>(
+        useSelector(getFeeData)?.data
+    );
     const [showData, setShowData] = useState(false);
     const [key, setKey] = useState<number>(0);
 
-    const tickerData = useSelector(getStockData)?.data;
+    const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
     const customerData = useSelector(getCustomersData)?.data;
     const theme = useSelector(getTheme);
     const dispatch = useDispatch<AppDispatch>();
 
-    const [tableHeight, setTableHeight] = useState(window.innerHeight - 550);
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 570);
     useEffect(() => {
         window.addEventListener('resize', () =>
-            setTableHeight(window.innerHeight - 550)
+            setTableHeight(window.innerHeight - 570)
         );
     }, []);
 
@@ -158,6 +161,7 @@ const MainContent: SFC = () => {
                     el.price = el.value?.toFixed(1);
                 });
                 setWageData(response);
+                setNewWageData(response);
             } else {
                 const data = [];
                 data.push(response);
@@ -165,6 +169,7 @@ const MainContent: SFC = () => {
                     el.price = el.value?.toFixed(1);
                 });
                 setWageData(data);
+                setNewWageData(data);
             }
             toast.success('اطلاعات با موفقیت ارسال شد');
             setLoading(false);
@@ -194,6 +199,7 @@ const MainContent: SFC = () => {
                 el.value = el.value.toFixed(1);
             });
             setWageData(response);
+            setNewWageData(response);
             toast.success('اطلاعات با موفقیت ارسال شد');
             setLoading(false);
         } catch (error) {
@@ -206,7 +212,7 @@ const MainContent: SFC = () => {
     const downloadRow = async (e) => {
         console.log(e);
         const params: { [key: string]: string | number | boolean } = {
-            fund: e.ticker,
+            fund: e,
             full_name: e.full_name,
             start_date: startDate
                 ? convertToPersianDate(startDate?.toISOString())
@@ -273,6 +279,11 @@ const MainContent: SFC = () => {
         }
     };
 
+    const filterData = (stockId) => {
+        console.log(stockId);
+        setNewWageData(wageData.filter((e) => e.stock_id.includes(stockId)));
+    };
+
     return (
         <div className="relative">
             <S.Background $url={FeeBack} />
@@ -283,113 +294,108 @@ const MainContent: SFC = () => {
                 <div className="change-container">
                     <div className="p-5 pt-0">
                         <div className="flex justify-center mb-6">
-                            <S.Input
-                                value={fund}
-                                suggestions={suggestions.fund}
-                                completeMethod={suggestFund}
-                                onChange={(e) => {
+                            <S.DropDownStyle
+                                options={tickerData}
+                                value={fund || ''}
+                                onChange={(e: { value: string }) => {
                                     setFund(e.value);
-                                }}
-                                onSelect={(e) => {
                                     fetchFirstManagementWage(e.value);
                                     setShowData(true);
                                 }}
-                                placeholder="نام صندوق"
                                 panelStyle={{
                                     background:
                                         theme === 'dark' ? 'black' : 'white',
                                     color: 'red',
                                 }}
+                                placeholder="نام صندوق"
                             />
                         </div>
-                        {showData && (
-                            <>
-                                <div className="flex items-center justify-center gap-2 flex-wrap">
-                                    <div className="data-filter-inputs flex justify-center items-center gap-6 w-full flex-wrap">
-                                        <div className="flex  gap-2 flex-col">
-                                            <label
-                                                htmlFor="stockId"
-                                                className="w-20"
-                                            >
-                                                نام سهامدار :
-                                            </label>
-                                            <S.Input
-                                                value={stockId}
-                                                suggestions={
-                                                    suggestions.stockId
-                                                }
-                                                completeMethod={suggestStockId}
-                                                onChange={(e) =>
-                                                    setStockId(e.value)
-                                                }
-                                                placeholder="نام سهامدار"
-                                                panelStyle={{
-                                                    background:
-                                                        theme === 'dark'
-                                                            ? 'black'
-                                                            : 'white',
-                                                    color: 'red',
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="flex  gap-2 flex-col">
-                                            <label
-                                                htmlFor="stockId"
-                                                className="whitespace-nowrap text-start"
-                                            >
-                                                نرخ کارمزد (%) :
-                                            </label>
-                                            <S.NumInput
-                                                value={wage}
-                                                onValueChange={(e) =>
-                                                    setWage(e.value ?? 0)
-                                                }
-                                                minFractionDigits={1}
-                                                maxFractionDigits={1}
-                                                step={0.5}
-                                                placeholder="نرخ کارمزد"
-                                                mode="decimal"
-                                                min={0}
-                                                max={100}
-                                            />
-                                        </div>
-                                        <div className="flex relative gap-2 flex-col">
-                                            <label className="w-20">
-                                                تاریخ :
-                                            </label>
-                                            <DatePicker
-                                                key={key}
-                                                className="z-10"
-                                                round="x4"
-                                                position="center"
-                                                range
-                                                // accentColor={theme === "dark" ? "#000000" : "#FFFFFF"}
-                                                onChange={(e) => {
-                                                    setStartDate(e.from),
-                                                        setEndDate(e.to);
-                                                }}
-                                                inputClass={
+                        <>
+                            <div className="flex items-center justify-center gap-2 flex-wrap">
+                                <div className="data-filter-inputs flex justify-center items-center gap-6 w-full flex-wrap">
+                                    <div className="flex  gap-2 flex-col">
+                                        <label
+                                            htmlFor="stockId"
+                                            className="w-20"
+                                        >
+                                            نام سهامدار :
+                                        </label>
+                                        <S.Input
+                                            value={stockId}
+                                            suggestions={suggestions.stockId}
+                                            completeMethod={suggestStockId}
+                                            onChange={(e) =>
+                                                setStockId(e.value)
+                                            }
+                                            placeholder="نام سهامدار"
+                                            panelStyle={{
+                                                background:
                                                     theme === 'dark'
-                                                        ? 'bg-[#000000] !text-[#ffffff] h-[35px] w-[230px] text-sm !px-0 text-center'
-                                                        : 'bg-[#FFFFFF] !text-[#000000] h-[35px] w-[230px] text-sm !px-0 text-center'
-                                                }
-                                                customShowDateFormat="YY/MM/DD"
-                                            />
-                                            <Button
-                                                onClick={() => {
-                                                    setEndDate(null);
-                                                    setStartDate(null);
-                                                    setKey(
-                                                        (prevKey) => prevKey + 1
-                                                    );
-                                                }}
-                                                className="absolute left-4 top-8 aspect-square h-8 w-8 max-w-8 min-w-0 p-0 justify-center"
-                                                text
-                                            >
-                                                <i className="pi pi-times"></i>
-                                            </Button>
+                                                        ? 'black'
+                                                        : 'white',
+                                                color: 'red',
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="flex  gap-2 flex-col">
+                                        <label
+                                            htmlFor="stockId"
+                                            className="whitespace-nowrap text-start"
+                                        >
+                                            نرخ کارمزد (%) :
+                                        </label>
+                                        <S.NumInput
+                                            value={wage}
+                                            onValueChange={(e) =>
+                                                setWage(e.value ?? 0)
+                                            }
+                                            minFractionDigits={1}
+                                            maxFractionDigits={1}
+                                            step={0.5}
+                                            placeholder="نرخ کارمزد"
+                                            mode="decimal"
+                                            min={0}
+                                            max={100}
+                                        />
+                                    </div>
+                                    <div className="flex relative gap-2 flex-col">
+                                        <div className="flex items-center gap-32 mx-5">
+                                            <span>از:</span>
+                                            <span>تا:</span>
                                         </div>
-                                        {/* <div className="flex  gap-2 flex-col">
+                                        <DatePicker
+                                            key={key}
+                                            className="z-10"
+                                            round="x4"
+                                            position="center"
+                                            range
+                                            // accentColor={theme === "dark" ? "#000000" : "#FFFFFF"}
+                                            onChange={(e) => {
+                                                setStartDate(e.from),
+                                                    setEndDate(e.to);
+                                            }}
+                                            inputClass={
+                                                theme === 'dark'
+                                                    ? 'bg-[#000000] !text-[#ffffff] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                                    : 'bg-[#FFFFFF] !text-[#000000] h-[35px] w-[230px] text-sm !px-0 text-center'
+                                            }
+                                            customShowDateFormat="YY/MM/DD"
+                                        />
+                                        <Button
+                                            onClick={() => {
+                                                setEndDate(null);
+                                                setStartDate(null);
+                                                setKey(
+                                                    (prevKey) => prevKey + 1
+                                                );
+                                            }}
+                                            className="absolute left-4 top-8 aspect-square h-8 w-8 max-w-8 min-w-0 p-0 justify-center"
+                                            text
+                                        >
+                                            <i className="pi pi-times"></i>
+                                        </Button>
+                                    </div>
+                                    {/* <div className="flex  gap-2 flex-col">
                                 <label className="w-20">تاریخ پایان :</label>
                                 <DatePicker
                                     className="z-10"
@@ -404,66 +410,75 @@ const MainContent: SFC = () => {
                                     }
                                 />
                             </div> */}
-                                    </div>
                                 </div>
-                                <div className="flex justify-center items-center mt-8 gap-2 mb-10">
-                                    <Button
-                                        label="جستجو"
-                                        icon="pi pi-search ml-2 text-sm"
-                                        onClick={fetchManagementWage}
-                                        className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                                        outlined
-                                    />
-                                    <Button
-                                        label="دانلود"
-                                        icon="pi pi-download ml-2 text-sm"
-                                        onClick={downloadManagementWage}
-                                        className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                                        outlined
+                            </div>
+                            <div className="flex justify-center items-center mt-8 gap-2 mb-5">
+                                <Button
+                                    label="جستجو"
+                                    icon="pi pi-search ml-2 text-sm"
+                                    onClick={fetchManagementWage}
+                                    className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                    outlined
+                                />
+                                <Button
+                                    label="دانلود"
+                                    icon="pi pi-download ml-2 text-sm"
+                                    onClick={downloadManagementWage}
+                                    className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                    outlined
+                                />
+                            </div>
+                            <div className="flex items-center justify-end mb-5 gap-5">
+                                <S.TextInput
+                                    onInput={(e) =>
+                                        filterData(
+                                            (e.target as HTMLInputElement).value
+                                        )
+                                    }
+                                    placeholder="کد بورسی"
+                                />
+                            </div>
+                            {loading ? (
+                                <div
+                                    className="spinner-container"
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        height: '200px',
+                                    }}
+                                >
+                                    <ProgressSpinner
+                                        style={{
+                                            width: '50px',
+                                            height: '50px',
+                                        }}
+                                        strokeWidth="8"
+                                        fill="transparent"
+                                        animationDuration=".5s"
                                     />
                                 </div>
-                                {loading ? (
-                                    <div
-                                        className="spinner-container"
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            height: '200px',
-                                        }}
-                                    >
-                                        <ProgressSpinner
-                                            style={{
-                                                width: '50px',
-                                                height: '50px',
-                                            }}
-                                            strokeWidth="8"
-                                            fill="transparent"
-                                            animationDuration=".5s"
-                                        />
-                                    </div>
-                                ) : error ? (
-                                    <div
-                                        className="error-message"
-                                        style={{
-                                            textAlign: 'center',
-                                            color: 'red',
-                                        }}
-                                    >
-                                        {error}
-                                    </div>
-                                ) : (
-                                    <DataTable
-                                        data={wageData}
-                                        columnFields={wageColumnFields}
-                                        totalRecords={wageData.length}
-                                        pagination={true}
-                                        onDownloadClick={downloadRow}
-                                        scrollHeight={tableHeight + 'px'}
-                                    />
-                                )}
-                            </>
-                        )}
+                            ) : error ? (
+                                <div
+                                    className="error-message"
+                                    style={{
+                                        textAlign: 'center',
+                                        color: 'red',
+                                    }}
+                                >
+                                    {error}
+                                </div>
+                            ) : (
+                                <DataTable
+                                    data={newWageData}
+                                    columnFields={wageColumnFields}
+                                    totalRecords={newWageData.length}
+                                    pagination={true}
+                                    onDownloadClick={downloadRow}
+                                    scrollHeight={tableHeight + 'px'}
+                                />
+                            )}
+                        </>
                     </div>
                 </div>
             </S.Container>

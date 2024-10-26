@@ -2,7 +2,23 @@ import styled from 'styled-components';
 
 export const Container = styled.div`
     padding: 10px;
+    height: 100%;
+    overflow: hidden;
     text-align: center;
+    position: relative;
+`;
+export const Background = styled.div<{ $url: string }>`
+    background-image: ${({ $url, theme }) =>
+        $url ? `url(${$url})` : theme.border};
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    opacity: 20%;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    right: 0;
 `;
 
 export const ProfileSection = styled.div`

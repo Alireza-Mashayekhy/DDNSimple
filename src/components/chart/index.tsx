@@ -34,6 +34,7 @@ const LineChart: React.FC<LineChartProps> = ({ datasets, labels }) => {
         xaxis: {
             categories: labels,
             labels: {
+                show: false,
                 style: {
                     colors: theme === 'dark' ? '#ffffff' : '#000000',
                     fontFamily: 'IranSans',

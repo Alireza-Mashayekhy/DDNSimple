@@ -1,4 +1,5 @@
 import { inputStyle } from '@/styles';
+import { dropDownStyle } from '@/styles/mixins';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown } from 'primereact/dropdown';
 import styled from 'styled-components';
@@ -12,6 +13,9 @@ export const Container = styled.div`
 
 export const Input = styled(AutoComplete)`
     ${inputStyle}
+`;
+export const DropDownStyle = styled(Dropdown)`
+    ${dropDownStyle}
 `;
 
 export const Background = styled.div<{ $url: string }>`

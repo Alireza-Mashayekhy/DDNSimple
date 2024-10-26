@@ -66,8 +66,8 @@ const MainContent: SFC = () => {
         startDate: null as Date | null,
         endDate: null as Date | null,
     });
-    const [selectedTicker, setSelectedTicker] = useState<Ticker | undefined>(
-        undefined
+    const [selectedTicker, setSelectedTicker] = useState<string | undefined>(
+        'سیناد'
     );
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
     const [filteredInvestor, setFilteredInvestor] = useState([]);
@@ -84,7 +84,7 @@ const MainContent: SFC = () => {
     const [changeActiveIndex, setChangeActiveIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [key, setKey] = useState<number>(0);
-    const tickerData = useSelector(getStockData)?.data;
+    const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
     const theme = useSelector(getTheme);
 
     const [tableHeight, setTableHeight] = useState(window.innerHeight - 550);
@@ -124,7 +124,7 @@ const MainContent: SFC = () => {
             const params = {
                 start_date: startDate,
                 end_date: endDate,
-                ticker: selectedTicker?.ticker,
+                ticker: selectedTicker,
                 inv_type: investorType.code,
                 export: true,
             };
@@ -134,7 +134,7 @@ const MainContent: SFC = () => {
             link.href = url;
             link.setAttribute(
                 'download',
-                `گزارش_تغییرات_${selectedTicker?.ticker}_${startDate}_${endDate}.xlsx`
+                `گزارش_تغییرات_${selectedTicker}_${startDate}_${endDate}.xlsx`
             );
             document.body.appendChild(link);
             link.click();
@@ -150,7 +150,7 @@ const MainContent: SFC = () => {
     const fetchStatisticsData = async () => {
         setLoading(true);
 
-        if (!startDate || !endDate || !selectedTicker?.ticker) {
+        if (!startDate || !endDate || !selectedTicker) {
             setLoading(false);
             return;
         }
@@ -164,7 +164,7 @@ const MainContent: SFC = () => {
             for (const e of actions) {
                 const params = {
                     action: e,
-                    ticker: selectedTicker.ticker,
+                    ticker: selectedTicker,
                     start_date: startDate,
                     end_date: endDate,
                     inv_type: investorType.code,
@@ -242,6 +242,7 @@ const MainContent: SFC = () => {
                     </div>
                 ) : (
                     <DataTable
+                        showRows
                         data={data?.results || []}
                         columnFields={changeColumnFields}
                         totalRecords={data?.count || 0}
@@ -263,22 +264,29 @@ const MainContent: SFC = () => {
                 <div className="change-container">
                     <div className="pb-5 pt-10">
                         <div className="data-filter-inputs justify-center flex items-center flex-wrap gap-y-5">
-                            <S.Input
-                                value={selectedTicker || ''}
-                                suggestions={filteredTickers}
-                                completeMethod={searchTicker}
-                                field="ticker"
-                                onChange={(e: { value: Ticker }) => {
-                                    setSelectedTicker(e.value);
-                                }}
-                                placeholder="لطفاً یک نماد را انتخاب کنید."
-                                panelStyle={{
-                                    background:
-                                        theme === 'dark' ? 'black' : 'white',
-                                    color: 'red',
-                                }}
-                            />
-                            <div className="flex items-center relative">
+                            <div className="flex flex-col items-start">
+                                <div>نماد:</div>
+                                <S.DropDownStyle
+                                    options={tickerData}
+                                    value={selectedTicker || ''}
+                                    onChange={(e: { value: string }) => {
+                                        setSelectedTicker(e.value);
+                                    }}
+                                    panelStyle={{
+                                        background:
+                                            theme === 'dark'
+                                                ? 'black'
+                                                : 'white',
+                                        color: 'red',
+                                    }}
+                                    placeholder="لطفاً یک نماد را انتخاب کنید."
+                                />
+                            </div>
+                            <div className="flex flex-col relative">
+                                <div className="flex items-center gap-32 mx-5">
+                                    <span>از:</span>
+                                    <span>تا:</span>
+                                </div>
                                 <DatePicker
                                     key={key}
                                     round="x4"
@@ -311,26 +319,31 @@ const MainContent: SFC = () => {
                                         setStartDate(null);
                                         setKey((prevKey) => prevKey + 1);
                                     }}
-                                    className="absolute left-5 aspect-square h-8 w-8 max-w-8 min-w-0 p-0 justify-center"
+                                    className="absolute left-5 top-6 aspect-square h-8 w-8 max-w-8 min-w-0 p-0 justify-center"
                                     text
                                 >
                                     <i className="pi pi-times"></i>
                                 </Button>
                             </div>
 
-                            <S.DropdownStyle
-                                value={investorType}
-                                onChange={(e) => setInvestorType(e.value)}
-                                options={investorTypeList}
-                                optionLabel="name"
-                                placeholder="نوع سرمایه‌گذار"
-                                className="w-48"
-                                panelStyle={{
-                                    background:
-                                        theme === 'dark' ? 'black' : 'white',
-                                    color: 'red',
-                                }}
-                            />
+                            <div className="flex flex-col items-start">
+                                <div>نوع سرمایه‌گذار:</div>
+                                <S.DropdownStyle
+                                    value={investorType}
+                                    onChange={(e) => setInvestorType(e.value)}
+                                    options={investorTypeList}
+                                    optionLabel="name"
+                                    placeholder="نوع سرمایه‌گذار"
+                                    className="w-48"
+                                    panelStyle={{
+                                        background:
+                                            theme === 'dark'
+                                                ? 'black'
+                                                : 'white',
+                                        color: 'red',
+                                    }}
+                                />
+                            </div>
                         </div>
                         <div className="flex justify-center items-center mt-8 gap-2 mb-10">
                             <Button

@@ -13,6 +13,12 @@ export const fetchUsersList = () => async (dispatch: AppDispatch) => {
     dispatch(usersRequest());
     try {
         const data: Users[] = await api.getUsersList(dispatch);
+        data.map(
+            (e) =>
+                (e.fee_rate =
+                    parseFloat(e.commissions[0].marketing_percent) *
+                    parseFloat(e.commissions[0].wage_percent))
+        );
         dispatch(setUsersData(data));
         dispatch(usersSuccess());
     } catch (error) {
