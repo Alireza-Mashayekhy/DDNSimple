@@ -152,13 +152,16 @@ const MainContent: SFC = () => {
         first_name: '',
         last_name: '',
         national_id: '',
+        last_national_id: '',
         phone: '',
         email: '',
         is_active: true,
         marketerShare: '',
-        feeRate: '',
-        wage_percent: '',
-        marketing_percent: '',
+        fee_rate: '',
+        commissions: {
+            wage_percent: '',
+            marketing_percent: '',
+        },
     });
     const [newUser, setNewUser] = useState({
         first_name: '',
@@ -215,7 +218,7 @@ const MainContent: SFC = () => {
     };
 
     const userStoreData = useSelector(getUsers)?.data;
-
+    console.log(userStoreData);
     const getDataFunc = async () => {
         if (!userStoreData.length) {
             setLoading(true);
@@ -235,6 +238,10 @@ const MainContent: SFC = () => {
     const handleEditClick = (detail) => {
         setEditModal(true);
         setUserDetail(detail);
+        setUserDetail((prev) => ({
+            ...prev,
+            last_national_id: detail.national_id,
+        }));
     };
 
     const validateEmail = (email) => {
@@ -259,29 +266,13 @@ const MainContent: SFC = () => {
             toast.error('ایمیل معتبر نیست.');
             return;
         }
-        if (parseInt(userDetail.marketerShare) > 100) {
-            toast.error('سهم بازاریاب معتبر نیست.');
-            return;
-        }
-        if (parseInt(userDetail.feeRate) > 100) {
-            toast.error('نرخ کارمزد معتبر نیست.');
-            return;
-        }
+        const data = {
+            ...userDetail,
+            commissions: [userDetail.commissions],
+        };
+
         try {
-            const data = {
-                national_id: userDetail.national_id,
-                phone: userDetail.phone,
-                email: userDetail.email,
-                marketerShare: userDetail.marketerShare,
-                feeRate: userDetail.feeRate,
-                commissions: [
-                    {
-                        wage_percent: userDetail.wage_percent,
-                        marketing_percent: userDetail.marketing_percent,
-                    },
-                ],
-            };
-            await editUser(dispatch, data.national_id, data);
+            await editUser(dispatch, userDetail.last_national_id, data);
             toast.success('کاربر با موفقیت ویرایش شد.');
             setEditModal(false);
             Promise.all([dispatch(fetchUsersList())]);
@@ -327,12 +318,10 @@ const MainContent: SFC = () => {
                 last_name: newUser.last_name,
                 national_id: newUser.national_id,
                 phone: newUser.phone,
-                commissions: [
-                    {
-                        wage_percent: newUser.wage_percent,
-                        marketing_percent: newUser.marketing_percent,
-                    },
-                ],
+                commissions: {
+                    wage_percent: newUser.wage_percent,
+                    marketing_percent: newUser.marketing_percent,
+                },
             };
             await createUsersList(dispatch, data);
             toast.success('کاربر با موفقیت ایجاد شد.');
@@ -360,6 +349,7 @@ const MainContent: SFC = () => {
 
     const handleDetailsClick = async (detail) => {
         const response = await getUser(dispatch, detail.national_id);
+        console.log(response);
         response.forEach((e) => {
             e.total_wage = e.total_wage.toFixed(1);
         });
@@ -918,21 +908,21 @@ const MainContent: SFC = () => {
                                     ایمیل
                                 </label>
                             </S.FloatLabelSection>
-                            <S.FloatLabelSection>
+                            {/* <S.FloatLabelSection>
                                 <S.FloatLabelInput
-                                    id="feeRate"
-                                    value={userDetail.feeRate}
+                                    id="fee_rate"
+                                    value={userDetail.fee_rate}
                                     onChange={(e) =>
                                         setUserDetail((prev) => ({
                                             ...prev,
-                                            feeRate: e.target.value,
+                                            fee_rate: e.target.value,
                                         }))
                                     }
                                     keyfilter="int"
                                     max={100}
                                 />
                                 <label
-                                    htmlFor="feeRate"
+                                    htmlFor="fee_rate"
                                     className="text-right right-0 bg-inherit"
                                 >
                                     نرخ کارمزد
@@ -957,15 +947,18 @@ const MainContent: SFC = () => {
                                 >
                                     سهم بازاریاب
                                 </label>
-                            </S.FloatLabelSection>
+                            </S.FloatLabelSection> */}
                             <S.FloatLabelSection>
                                 <S.FloatLabelInput
                                     id="email"
-                                    value={userDetail.wage_percent}
+                                    value={userDetail.commissions.wage_percent}
                                     onChange={(e) =>
                                         setUserDetail((prev) => ({
                                             ...prev,
-                                            wage_percent: e.target.value,
+                                            commissions: {
+                                                ...prev.commissions,
+                                                wage_percent: e.target.value,
+                                            },
                                         }))
                                     }
                                     keyfilter="int"
@@ -980,11 +973,17 @@ const MainContent: SFC = () => {
                             <S.FloatLabelSection>
                                 <S.FloatLabelInput
                                     id="email"
-                                    value={userDetail.marketing_percent}
+                                    value={
+                                        userDetail.commissions.marketing_percent
+                                    }
                                     onChange={(e) =>
                                         setUserDetail((prev) => ({
                                             ...prev,
-                                            marketing_percent: e.target.value,
+                                            commissions: {
+                                                ...prev.commissions,
+                                                marketing_percent:
+                                                    e.target.value,
+                                            },
                                         }))
                                     }
                                     keyfilter="int"

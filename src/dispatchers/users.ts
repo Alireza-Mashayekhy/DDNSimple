@@ -13,12 +13,13 @@ export const fetchUsersList = () => async (dispatch: AppDispatch) => {
     dispatch(usersRequest());
     try {
         const data: Users[] = await api.getUsersList(dispatch);
-        data.map(
-            (e) =>
-                (e.fee_rate =
-                    parseFloat(e.commissions[0].marketing_percent) *
-                    parseFloat(e.commissions[0].wage_percent))
-        );
+        data?.forEach((e) => {
+            e.fee_rate =
+                parseFloat(e?.commissions?.marketing_percent) *
+                    parseFloat(e?.commissions?.wage_percent) || 0;
+            e.full_name = `${e?.first_name} ${e?.last_name}`;
+        });
+
         dispatch(setUsersData(data));
         dispatch(usersSuccess());
     } catch (error) {

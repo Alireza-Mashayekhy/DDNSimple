@@ -35,7 +35,7 @@ export const createUsersList = async (dispatch: AppDispatch, data) => {
 
 export const getUser = async (dispatch: AppDispatch, id) => {
     try {
-        const url = `${BASE_URL}/marketers/${id}/`;
+        const url = `${BASE_URL}/marketers/${id}/customers/`;
         const response = await axios.get(url, authorizationHeaders());
         return response.data;
     } catch (error) {
@@ -101,7 +101,7 @@ export const deleteUser = async (dispatch: AppDispatch, id, params) => {
 
 export const getUserDetail = async (dispatch: AppDispatch, id, params) => {
     try {
-        const url = `${BASE_URL}/marketers/${id}/customer_detail/`;
+        const url = `${BASE_URL}/marketers/${id}/customers/`;
         const response = await axios.get(url, {
             params,
             headers: {
