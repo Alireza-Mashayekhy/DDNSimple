@@ -33,9 +33,7 @@ export const Background = styled.div<{ $url: string }>`
             ${({ theme }) => theme.secondaryOpacity} 100%
         ),
         ${({ $url }) => `url(${$url})`} no-repeat center center;
-    // background:  !important;
     background-size: cover !important;
-    background-position: center !important;
     background-repeat: no-repeat !important;
     position: absolute;
     width: 100%;

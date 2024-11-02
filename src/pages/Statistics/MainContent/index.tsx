@@ -29,13 +29,13 @@ const changeColumnFields = [
         width: '10%',
     },
     {
-        field: 'date',
-        header: 'تاریخ',
+        field: 'customer',
+        header: 'نام سهامدار',
         width: '10%',
     },
     {
-        field: 'customer',
-        header: 'نام سهامدار',
+        field: 'inv_type',
+        header: 'نوع سهامدار',
         width: '10%',
     },
     {
@@ -75,7 +75,10 @@ const MainContent: SFC = () => {
     const [endDate, setEndDate] = useState<string | undefined>(undefined);
     const [loadingData, setLoading] = useState(false);
     const [loadingDownload, setLoadingDownload] = useState(false);
-
+    const [searchedDate, setSearchedDate] = useState({
+        startDate: '',
+        endDate: '',
+    });
     const [changeTabData, setChangeTabData] = useState<any>({
         change: null,
         new_investors: null,
@@ -84,13 +87,14 @@ const MainContent: SFC = () => {
     const [changeActiveIndex, setChangeActiveIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [key, setKey] = useState<number>(0);
+    const [sortedDates, setSortedDates] = useState([]);
     const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
     const theme = useSelector(getTheme);
 
-    const [tableHeight, setTableHeight] = useState(window.innerHeight - 550);
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 600);
     useEffect(() => {
         window.addEventListener('resize', () =>
-            setTableHeight(window.innerHeight - 550)
+            setTableHeight(window.innerHeight - 600)
         );
     }, []);
 
@@ -134,7 +138,7 @@ const MainContent: SFC = () => {
             link.href = url;
             link.setAttribute(
                 'download',
-                `گزارش_تغییرات_${selectedTicker}_${startDate}_${endDate}.xlsx`
+                `گزارش_تغییرات ${selectedTicker} از تاریخ ${searchedDate.startDate} تا تاریخ ${searchedDate.endDate}.xlsx`
             );
             document.body.appendChild(link);
             link.click();
@@ -155,12 +159,14 @@ const MainContent: SFC = () => {
             return;
         }
         try {
+            setSearchedDate({ startDate, endDate });
             const actions = [
                 'change',
                 'new_investor',
                 'exited_investor',
                 'hold',
             ];
+            const dates = [];
             for (const e of actions) {
                 const params = {
                     action: e,
@@ -171,7 +177,12 @@ const MainContent: SFC = () => {
                 };
 
                 const response = await getStatistics(params);
-                console.log(response);
+
+                for (const item in response) {
+                    if (!dates.includes(response[item].date)) {
+                        dates.push(response[item].date);
+                    }
+                }
 
                 const newData = {
                     results: response,
@@ -183,6 +194,7 @@ const MainContent: SFC = () => {
                     [e]: newData,
                 }));
             }
+            setSortedDates(dates.sort());
         } catch (error) {
             console.error('Error fetching change tab data:', error);
             setError('لطفا دوباره تلاش کنید.');
@@ -262,7 +274,7 @@ const MainContent: SFC = () => {
                     آمار تغییرات
                 </h1>
                 <div className="change-container">
-                    <div className="pb-5 pt-10">
+                    <div className=" pt-10">
                         <div className="data-filter-inputs justify-center flex items-center flex-wrap gap-y-5">
                             <div className="flex flex-col items-start">
                                 <div>نماد:</div>
@@ -368,6 +380,13 @@ const MainContent: SFC = () => {
                             />
                         </div>
                     </div>
+
+                    {sortedDates.length !== 0 && (
+                        <div className="w-full text-center text-xl mb-5 flex items-center gap-1 justify-center">
+                            از تاریخ <div>{sortedDates[0]}</div> تا تاریخ{' '}
+                            <div>{sortedDates[sortedDates.length - 1]}</div>
+                        </div>
+                    )}
 
                     <TabView
                         activeIndex={changeActiveIndex}

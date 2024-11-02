@@ -116,6 +116,7 @@ const Investment = () => {
     });
     const [suggestions, setSuggestions] = useState<any>({ lastName: [] });
     const [summaryDetailId, setSummaryDetailId] = useState<any>(null);
+    const [summaryDetail, setSummaryDetail] = useState(null);
     const [summaryFundName, setSummaryFundName] = useState<any>(null);
     const [shareholderData, setShareholderData] = useState<any>(null);
     const [sortedTreeData, setSortedTreeData] = useState<TreeNode[]>([]);
@@ -143,7 +144,7 @@ const Investment = () => {
         background: theme === 'dark' ? '#262626' : '#fff',
         color: theme === 'dark' ? '#fff' : '#000',
         padding: '1rem',
-        borderBottom: '1px solid #e9ecef',
+        // borderBottom: '1px solid #e9ecef',
         fontWeight: 'bold',
     };
 
@@ -286,7 +287,10 @@ const Investment = () => {
             );
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'fund_summary_report.xlsx');
+            link.setAttribute(
+                'download',
+                `گزارش جامع سرمایه‌گذاران درصدی صندوق‌ها ${selectedDate}.xlsx`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -313,7 +317,10 @@ const Investment = () => {
             );
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'shareholder_report.xlsx');
+            link.setAttribute(
+                'download',
+                `${summaryDetail.name} ${summaryFundName}.xlsx`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -388,6 +395,7 @@ const Investment = () => {
                 (s) => s.id?.toString() === fundId
             );
             setSummaryDetailId(summary?.id);
+            setSummaryDetail(summary);
             setSummaryFundName(node.data.fund);
             const investorName = summary ? summary.name : 'Unknown Investor';
 
@@ -503,9 +511,9 @@ const Investment = () => {
                 <div className="flex justify-end items-center mb-5">
                     <Button
                         className={` rounded-lg aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
-                        outlined
+                        text
                         // label="دانلود"
-                        icon="pi pi-download "
+                        icon="pi pi-download text-xl"
                         onClick={handleModalDownload}
                     />
                 </div>
@@ -570,7 +578,7 @@ const Investment = () => {
 
                 <div className="p-5 pt-12 relative">
                     <h1 className="text-right mb-10 px-10 text-4xl">
-                        سرمایه گذاری
+                        گزارش سرمایه‌گذاران درصدی صندوقها
                     </h1>
                     <S.DialogStyle
                         // header="جزییات سهامدار"

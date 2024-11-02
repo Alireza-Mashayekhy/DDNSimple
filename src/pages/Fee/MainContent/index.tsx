@@ -17,6 +17,7 @@ import { fetchCustomersData } from '@/dispatchers/customers';
 import { useDispatch } from 'react-redux';
 import { fetchFeeData as _fetchFeeData } from '@/dispatchers/fee';
 import FeeBack from '@/assets/feeBack.jpg';
+import { getAccess } from '@/utils/authentication';
 
 const wageColumnFields = [
     {
@@ -36,7 +37,7 @@ const wageColumnFields = [
     },
     {
         field: 'price',
-        header: 'کارمزد مدیر(میلیون ریال)',
+        header: 'کارمزد مدیر(ریال)',
         width: '25%',
     },
     {
@@ -51,8 +52,12 @@ const MainContent: SFC = () => {
     const [suggestions, setSuggestions] = useState({
         stockId: [],
         fund: [],
+        lastname: [],
+        nationalId: [],
     });
     const [stockId, setStockId] = useState('');
+    const [lastname, setLastname] = useState('');
+    const [nationalId, setNationalId] = useState('');
     const [wage, setWage] = useState(0.5);
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
@@ -66,7 +71,14 @@ const MainContent: SFC = () => {
     );
     const [showData, setShowData] = useState(false);
     const [key, setKey] = useState<number>(0);
-
+    const [selectedType, setSelectedType] = useState('نام سهامدار');
+    const [ws, setWs] = useState<WebSocket | null>(null);
+    const [downloadLink, setLink] = useState('');
+    const [downloadLoading, setDownloadLoading] = useState(false);
+    const [searchedDates, setSearchedDates] = useState({
+        startDate: '',
+        endDate: '',
+    });
     const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
     const customerData = useSelector(getCustomersData)?.data;
     const theme = useSelector(getTheme);
@@ -94,6 +106,12 @@ const MainContent: SFC = () => {
 
     useEffect(() => {
         getDataFunc();
+        connectWs();
+        return () => {
+            if (ws) {
+                ws.close();
+            }
+        };
     }, []);
 
     const suggestFund = (event: { query: string }) => {
@@ -105,12 +123,32 @@ const MainContent: SFC = () => {
     };
     const suggestStockId = (event: { query: string }) => {
         const query = event.query;
-        const filteredSuggestions = customerData.last_names
+        const filteredSuggestions = customerData.stock_ids
             .filter((item: any) => item.includes(query))
             .map((item: any) => item);
         setSuggestions((prev: any) => ({
             ...prev,
             stockId: filteredSuggestions,
+        }));
+    };
+    const suggestLastNames = (event: { query: string }) => {
+        const query = event.query;
+        const filteredSuggestions = customerData.last_names
+            .filter((item: any) => item.includes(query))
+            .map((item: any) => item);
+        setSuggestions((prev: any) => ({
+            ...prev,
+            lastname: filteredSuggestions,
+        }));
+    };
+    const suggestNationalIds = (event: { query: string }) => {
+        const query = event.query;
+        const filteredSuggestions = customerData.national_ids
+            .filter((item: any) => item.includes(query))
+            .map((item: any) => item);
+        setSuggestions((prev: any) => ({
+            ...prev,
+            nationalId: filteredSuggestions,
         }));
     };
 
@@ -135,11 +173,19 @@ const MainContent: SFC = () => {
                 start_date?: string;
                 end_date?: string;
                 wage?: number;
+                stock_id?: string;
+                national_id?: string;
             } = {
                 fund: fund,
             };
-            if (stockId) {
-                params.full_name = stockId;
+            if (selectedType === 'کد بورسی' && stockId) {
+                params.stock_id = stockId;
+            }
+            if (selectedType === 'کد ملی' && nationalId) {
+                params.national_id = nationalId;
+            }
+            if (selectedType === 'نام سهامدار' && lastname) {
+                params.full_name = lastname;
             }
             if (startDate) {
                 params.start_date = convertToPersianDate(
@@ -153,25 +199,33 @@ const MainContent: SFC = () => {
                 params.wage = wage;
             }
 
-            const response = await fetchFeeData(params);
+            const response = await fetchFeeData(params, dispatch);
 
-            console.log(response);
-            if (response.length) {
-                response.forEach((el) => {
-                    el.price = el.value?.toFixed(1);
-                });
-                setWageData(response);
-                setNewWageData(response);
+            if (!response.message) {
+                if (response.length) {
+                    response.forEach((el) => {
+                        el.price = el.value?.toFixed(1);
+                    });
+                    setWageData(response);
+                    setNewWageData(response);
+                } else {
+                    const data = [];
+                    data.push(response);
+                    data.forEach((el) => {
+                        el.price = el.value?.toFixed(1);
+                    });
+                    setWageData(data);
+                    setNewWageData(data);
+                }
+                toast.success('اطلاعات با موفقیت ارسال شد');
             } else {
-                const data = [];
-                data.push(response);
-                data.forEach((el) => {
-                    el.price = el.value?.toFixed(1);
+                setLink('');
+                setDownloadLoading(true);
+                setSearchedDates({
+                    startDate: convertToPersianDate(startDate?.toISOString()),
+                    endDate: convertToPersianDate(endDate?.toISOString()),
                 });
-                setWageData(data);
-                setNewWageData(data);
             }
-            toast.success('اطلاعات با موفقیت ارسال شد');
             setLoading(false);
         } catch (error) {
             console.error('Error fetching management wage:', error);
@@ -210,9 +264,8 @@ const MainContent: SFC = () => {
     };
 
     const downloadRow = async (e) => {
-        console.log(e);
         const params: { [key: string]: string | number | boolean } = {
-            fund: e,
+            fund: e.ticker,
             full_name: e.full_name,
             start_date: startDate
                 ? convertToPersianDate(startDate?.toISOString())
@@ -229,7 +282,10 @@ const MainContent: SFC = () => {
             const url = window.URL.createObjectURL(response);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'management_wage.xlsx');
+            link.setAttribute(
+                'download',
+                `گزارش کارمزد مدیر ${e.ticker} ${e.full_name}.xlsx`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -253,8 +309,14 @@ const MainContent: SFC = () => {
         if (wage) {
             params.wage = wage;
         }
-        if (stockId) {
-            params.full_name = stockId;
+        if (selectedType === 'کد بورسی' && stockId) {
+            params.stock_id = stockId;
+        }
+        if (selectedType === 'کد ملی' && nationalId) {
+            params.national_id = nationalId;
+        }
+        if (selectedType === 'نام سهامدار' && lastname) {
+            params.full_name = lastname;
         }
         if (startDate) {
             params.start_date = convertToPersianDate(startDate.toISOString());
@@ -268,7 +330,10 @@ const MainContent: SFC = () => {
             const url = window.URL.createObjectURL(response);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'management_wage.xlsx');
+            link.setAttribute(
+                'download',
+                `گزارش جامع کارمزد مدیر ${fund}.xlsx`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -279,9 +344,57 @@ const MainContent: SFC = () => {
         }
     };
 
-    const filterData = (stockId) => {
-        console.log(stockId);
-        setNewWageData(wageData.filter((e) => e.stock_id.includes(stockId)));
+    const downloadWebsocketFile = async () => {
+        window.open(downloadLink, '_blank');
+    };
+
+    const filterData = ({ type, stockId }) => {
+        if (type === 'code') {
+            setNewWageData(
+                wageData.filter((e) => e.stock_id.includes(stockId))
+            );
+        } else if (type === 'name') {
+            setNewWageData(
+                wageData.filter((e) => e.stock_id.includes(stockId))
+            );
+        } else if (type === 'national') {
+            setNewWageData(
+                wageData.filter((e) => e.stock_id.includes(stockId))
+            );
+        }
+    };
+
+    const connectWs = async () => {
+        try {
+            const wsInstance = new WebSocket(
+                `wss://clclub.oxalisys.com/ws/notification/?Authorization=${getAccess()}`
+            );
+
+            wsInstance.onopen = () => {
+                console.log('Connected to WebSocket');
+            };
+
+            wsInstance.onmessage = (event) => {
+                const receivedData = JSON.parse(event.data);
+
+                console.log(receivedData);
+                setDownloadLoading(false);
+                setLink(`https://clclub.oxalisys.com/${receivedData.file_url}`);
+                toast.success('گزارش با موفقیت دریافت شد');
+            };
+
+            wsInstance.onclose = (event) => {
+                console.log('WebSocket connection closed', event);
+            };
+
+            wsInstance.onerror = (error) => {
+                console.error('WebSocket error', error);
+            };
+
+            setWs(wsInstance);
+        } catch (error) {
+            console.error('Failed to connect WebSocket:', error);
+        }
     };
 
     return (
@@ -316,18 +429,22 @@ const MainContent: SFC = () => {
                                     <div className="flex  gap-2 flex-col">
                                         <label
                                             htmlFor="stockId"
-                                            className="w-20"
+                                            className="w-full text-right"
                                         >
-                                            نام سهامدار :
+                                            عنوان :
                                         </label>
-                                        <S.Input
-                                            value={stockId}
-                                            suggestions={suggestions.stockId}
-                                            completeMethod={suggestStockId}
-                                            onChange={(e) =>
-                                                setStockId(e.value)
-                                            }
-                                            placeholder="نام سهامدار"
+                                        <S.DropDownStyle
+                                            options={[
+                                                'نام سهامدار',
+                                                'کد بورسی',
+                                                'کد ملی',
+                                            ]}
+                                            value={selectedType || ''}
+                                            onChange={(e: {
+                                                value: string;
+                                            }) => {
+                                                setSelectedType(e.value);
+                                            }}
                                             panelStyle={{
                                                 background:
                                                     theme === 'dark'
@@ -337,6 +454,92 @@ const MainContent: SFC = () => {
                                             }}
                                         />
                                     </div>
+                                    {selectedType === 'نام سهامدار' ? (
+                                        <div className="flex  gap-2 flex-col">
+                                            <label
+                                                htmlFor="stockId"
+                                                className="w-20"
+                                            >
+                                                نام سهامدار :
+                                            </label>
+                                            <S.Input
+                                                value={lastname}
+                                                suggestions={
+                                                    suggestions.lastname
+                                                }
+                                                completeMethod={
+                                                    suggestLastNames
+                                                }
+                                                onChange={(e) =>
+                                                    setLastname(e.value)
+                                                }
+                                                placeholder="نام سهامدار"
+                                                panelStyle={{
+                                                    background:
+                                                        theme === 'dark'
+                                                            ? 'black'
+                                                            : 'white',
+                                                    color: 'red',
+                                                }}
+                                            />
+                                        </div>
+                                    ) : selectedType === 'کد بورسی' ? (
+                                        <div className="flex  gap-2 flex-col">
+                                            <label
+                                                htmlFor="stockId"
+                                                className="w-20"
+                                            >
+                                                کد بورسی :
+                                            </label>
+                                            <S.Input
+                                                value={stockId}
+                                                suggestions={
+                                                    suggestions.stockId
+                                                }
+                                                completeMethod={suggestStockId}
+                                                onChange={(e) =>
+                                                    setStockId(e.value)
+                                                }
+                                                placeholder="کد بورسی"
+                                                panelStyle={{
+                                                    background:
+                                                        theme === 'dark'
+                                                            ? 'black'
+                                                            : 'white',
+                                                    color: 'red',
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex  gap-2 flex-col">
+                                            <label
+                                                htmlFor="stockId"
+                                                className="w-20"
+                                            >
+                                                کد ملی :
+                                            </label>
+                                            <S.Input
+                                                value={nationalId}
+                                                suggestions={
+                                                    suggestions.nationalId
+                                                }
+                                                completeMethod={
+                                                    suggestNationalIds
+                                                }
+                                                onChange={(e) =>
+                                                    setNationalId(e.value)
+                                                }
+                                                placeholder="کد ملی"
+                                                panelStyle={{
+                                                    background:
+                                                        theme === 'dark'
+                                                            ? 'black'
+                                                            : 'white',
+                                                    color: 'red',
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                     <div className="flex  gap-2 flex-col">
                                         <label
                                             htmlFor="stockId"
@@ -395,24 +598,9 @@ const MainContent: SFC = () => {
                                             <i className="pi pi-times"></i>
                                         </Button>
                                     </div>
-                                    {/* <div className="flex  gap-2 flex-col">
-                                <label className="w-20">تاریخ پایان :</label>
-                                <DatePicker
-                                    className="z-10"
-                                    round="x4"
-                                    position="center"
-                                    // accentColor={theme === "dark" ? "#000000" : "#FFFFFF"}
-                                    onChange={(e) => setEndDate(e)}
-                                    inputClass={
-                                        theme === 'dark'
-                                            ? 'bg-[#000000] !text-[#ffffff] !mx-0 h-[35px] w-[190px] text-sm'
-                                            : 'bg-[#FFFFFF] !text-[#000000] !mx-0 h-[35px] w-[190px] text-sm'
-                                    }
-                                />
-                            </div> */}
                                 </div>
                             </div>
-                            <div className="flex justify-center items-center mt-8 gap-2 mb-5">
+                            <div className="flex justify-center items-center mt-8 gap-2 mb-10">
                                 <Button
                                     label="جستجو"
                                     icon="pi pi-search ml-2 text-sm"
@@ -421,22 +609,57 @@ const MainContent: SFC = () => {
                                     outlined
                                 />
                                 <Button
-                                    label="دانلود"
+                                    label="دانلود گزارش جامع کارمزد کل"
                                     icon="pi pi-download ml-2 text-sm"
                                     onClick={downloadManagementWage}
-                                    className={` rounded-lg w-28 text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                    className={` rounded-lg text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
                                     outlined
                                 />
-                            </div>
-                            <div className="flex items-center justify-end mb-5 gap-5">
-                                <S.TextInput
-                                    onInput={(e) =>
-                                        filterData(
-                                            (e.target as HTMLInputElement).value
-                                        )
-                                    }
-                                    placeholder="کد بورسی"
-                                />
+                                {downloadLoading ? (
+                                    <div className="relative">
+                                        <Button
+                                            label="درحال تولید گزارش جامع کارمزد"
+                                            className={` rounded-lg text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                            outlined
+                                            disabled
+                                        />
+                                        {searchedDates.startDate && (
+                                            <div className="flex whitespace-nowrap items-center gap-2 absolute -bottom-8">
+                                                از تاریخ{' '}
+                                                <div>
+                                                    {searchedDates.startDate}
+                                                </div>{' '}
+                                                تا تاریخ{' '}
+                                                <div>
+                                                    {searchedDates.endDate}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : downloadLink ? (
+                                    <div className="relative">
+                                        <Button
+                                            label="دانلود گزارش جامع کارمزد"
+                                            icon="pi pi-download ml-2 text-sm"
+                                            onClick={downloadWebsocketFile}
+                                            className={` rounded-lg text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                            outlined
+                                        />
+                                        <div className="flex whitespace-nowrap items-center gap-2 absolute -bottom-8">
+                                            از تاریخ{' '}
+                                            <div>{searchedDates.startDate}</div>{' '}
+                                            تا تاریخ{' '}
+                                            <div>{searchedDates.endDate}</div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        label="گزارش جامع کارمزد (بازه تاریخی)"
+                                        className={` rounded-lg text-sm py-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                        outlined
+                                        disabled
+                                    />
+                                )}
                             </div>
                             {loading ? (
                                 <div

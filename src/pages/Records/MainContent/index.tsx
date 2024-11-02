@@ -19,6 +19,8 @@ import { AppDispatch } from '@/types';
 import recordBack from '@/assets/recordsBack.jpg';
 import { toast } from 'react-toastify';
 import { DatePicker } from 'zaman';
+import moment from 'moment-jalaali';
+
 interface TickerItem {
     ticker: string;
 }
@@ -76,7 +78,11 @@ const columnFields = [
         width: '10%',
         sortable: true,
     },
-
+    {
+        field: 'inv_type',
+        header: 'نوع سهامدار',
+        width: '10%',
+    },
     {
         field: 'national_id',
         header: 'کد ملی',
@@ -187,7 +193,7 @@ const MainContent = () => {
         );
     }, []);
     const [key, setKey] = useState<number>(0);
-    const [selectedDate, setDate] = useState<Date | null>(null);
+    const [selectedDate, setDate] = useState<string | null>(null);
 
     const headerStyle = {
         background: theme === 'dark' ? '#262626' : '#fff',
@@ -243,7 +249,12 @@ const MainContent = () => {
                     <Button
                         icon="pi pi-download text-2xl"
                         onClick={() =>
-                            exportCustomer(selectedCustomer?.national_id)
+                            exportCustomer(
+                                selectedCustomer?.national_id,
+                                (selectedCustomer?.first_name || '') +
+                                    ' ' +
+                                    (selectedCustomer?.last_name || '')
+                            )
                         }
                         className={` rounded-lg aspect-square bg-inherit ${theme === 'dark' ? 'text-white' : 'text-black'}`}
                     />
@@ -268,7 +279,7 @@ const MainContent = () => {
             </>
         );
     };
-    const exportCustomer = async (nationalId: string) => {
+    const exportCustomer = async (nationalId: string, full_name: string) => {
         if (!selectedTicker) {
             console.error('selectedTicker is undefined');
             return;
@@ -278,7 +289,10 @@ const MainContent = () => {
         const url = window.URL.createObjectURL(response);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `customer_${nationalId}.xlsx`);
+        link.setAttribute(
+            'download',
+            `گزارش سرمایه گذاری ${full_name} ${selectedTicker}.xlsx`
+        );
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -333,10 +347,14 @@ const MainContent = () => {
             if (selectedLastname) {
                 params.customer_name = selectedLastname;
             }
+            if (selectedDate) {
+                params.date = selectedDate;
+            }
             const data = await getDdnHistories(params);
 
             data.forEach((e) => {
                 e.total_value = (e.total_value / 1000000000).toFixed(1);
+                e.inv_type = e.inv_type === 'L' ? 'حقوقی' : 'حقیقی';
             });
             setDdnHistories(data);
             setDdnHistoryLoading(false);
@@ -365,12 +383,18 @@ const MainContent = () => {
         if (selectedLastname) {
             params.customer_name = selectedLastname;
         }
+        if (selectedDate) {
+            params.date = selectedDate;
+        }
         try {
             const response = await exportDdnHistories(params);
             const url = window.URL.createObjectURL(response);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'records.xlsx');
+            link.setAttribute(
+                'download',
+                `گزارش جامع سرمایه گذاران ${selectedTicker} ${ddnHistories[0].date}.xlsx`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -441,6 +465,12 @@ const MainContent = () => {
         }
 
         setDisplayModal(true);
+    };
+
+    const convertToPersianDate = (gregorianDate: string): string => {
+        if (!gregorianDate) return '';
+        const persianDate = moment(gregorianDate).format('jYYYY-jMM-jDD');
+        return persianDate;
     };
 
     return (
@@ -517,7 +547,11 @@ const MainContent = () => {
                                 round="x4"
                                 position="center"
                                 onChange={(e) => {
-                                    setDate(e);
+                                    setDate(
+                                        convertToPersianDate(
+                                            e.value.toISOString()
+                                        )
+                                    );
                                 }}
                                 inputClass={
                                     theme === 'dark'

@@ -1,16 +1,18 @@
+import { logout } from '@/dispatchers/authentication';
 import { authorizationHeaders, getAccess } from '@/utils/authentication';
 import axios from 'axios';
 
 const BASE_URL = `${import.meta.env.VITE_APP_API_URL}/ddn`;
 
-export const getUploadData = async () => {
+export const getUploadData = async (dispatch) => {
     try {
         const url = `${BASE_URL}/stockstatus/`;
         const response = await axios.get(url, authorizationHeaders());
         return response.data;
     } catch (error) {
-        console.error(error);
-        throw error;
+        if (error.response.status === 401) {
+            dispatch(logout());
+        }
     }
 };
 

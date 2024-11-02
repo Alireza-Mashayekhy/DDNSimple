@@ -417,3 +417,28 @@ export const inputTextStyle = css`
         opacity: 1;
     }
 `;
+
+export const dropDownStyle = css`
+    background-color: ${({ theme }) => theme.primary} !important;
+    overflow: hidden;
+    .p-inputtext {
+        background-color: ${({ theme }) => theme.primary} !important;
+        color: ${({ theme }) => theme.textColor} !important;
+        margin: 0 !important;
+        width: 190px;
+        height: 35px;
+        font-size: 0.875rem;
+        padding: 6px 15px;
+        border-radius: 0px !important;
+        text-align: right;
+        &::placeholder {
+            color: ${({ theme }) => theme.hoverText};
+            opacity: 1;
+        }
+    }
+    .p-dropdown-trigger {
+        border-radius: 0px !important;
+        background-color: ${({ theme }) => theme.primary} !important;
+        color: ${({ theme }) => theme.textColor} !important;
+    }
+`;

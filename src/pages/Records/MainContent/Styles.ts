@@ -35,7 +35,6 @@ export const Background = styled.div<{ $url: string }>`
         ),
         ${({ $url }) => `url(${$url})`} no-repeat center center;
     // background:  !important;
-    background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
     position: absolute;
