@@ -625,11 +625,11 @@ const MainContent: SFC = () => {
                                         />
                                         {searchedDates.startDate && (
                                             <div className="flex whitespace-nowrap items-center gap-2 absolute -bottom-8">
-                                                از تاریخ{' '}
+                                                از{' '}
                                                 <div>
                                                     {searchedDates.startDate}
                                                 </div>{' '}
-                                                تا تاریخ{' '}
+                                                تا{' '}
                                                 <div>
                                                     {searchedDates.endDate}
                                                 </div>
