@@ -17,6 +17,19 @@ export const getFeeHistory = async () => {
         throw error;
     }
 };
+export const getFee = async (id, params) => {
+    try {
+        const url = `${BASE_URL}/${id}`;
+        const response = await axios.get(url, { params });
+        response.data.forEach((el) => {
+            el.price = el.value.toFixed(1);
+        });
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
 export const getFeeHistoryParam = async (params) => {
     try {
         const url = `${BASE_URL}/`;

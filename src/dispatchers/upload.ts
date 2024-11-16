@@ -12,7 +12,7 @@ import { toast } from 'react-toastify';
 export const fetchUploadData = () => async (dispatch: AppDispatch) => {
     dispatch(uploadRequest());
     try {
-        const data: Upload[] = await api.getUploadData(dispatch);
+        const data: Upload[] = await api.getUploadData();
         dispatch(setUploadData(data));
         dispatch(uploadSuccess());
     } catch (error) {

@@ -24,6 +24,8 @@ import LineChart from '@/components/chart';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputText } from 'primereact/inputtext';
 import usersBack from '@/assets/usersBack.png';
+import AddCustomer from '@/components/AddCustomer';
+import { TabPanel, TabView } from 'primereact/tabview';
 
 const dialogStyle = {
     width: '30vw',
@@ -98,7 +100,7 @@ const DetailColumnFields = [
         width: '10%',
     },
     {
-        field: 'total_wage',
+        field: 'total_commission',
         header: 'کارمزد',
         width: '10%',
     },
@@ -116,9 +118,9 @@ const DetailColumnFields = [
 
 const customerDetailColumnFields = [
     {
-        field: 'id',
-        header: '',
-        width: '5%',
+        field: 'ticker',
+        header: 'نماد',
+        width: '10%',
     },
     {
         field: 'date',
@@ -126,18 +128,13 @@ const customerDetailColumnFields = [
         width: '10%',
     },
     {
-        field: 'total_count',
+        field: 'shares',
         header: 'سهام کل',
         width: '10%',
     },
     {
-        field: 'freezed_count',
-        header: 'سهام سپرده',
-        width: '10%',
-    },
-    {
-        field: 'unfreezed_count',
-        header: 'سهام غیر سپرده',
+        field: 'wage',
+        header: 'کارمزد مدیر',
         width: '10%',
     },
 ];
@@ -170,8 +167,8 @@ const MainContent: SFC = () => {
         phone: '',
         email: '',
         is_active: true,
-        wage_percent: '',
-        marketing_percent: '',
+        wage_percent: 0,
+        marketing_percent: 0,
     });
     const [usersData, setUserData] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -180,6 +177,7 @@ const MainContent: SFC = () => {
     const [selectedUser, setSelectedUser] = useState({
         full_name: '',
         national_id: '',
+        fund: '',
     });
     const [selectedUser2, setSelectedUser2] = useState({
         ticker: '',
@@ -194,11 +192,12 @@ const MainContent: SFC = () => {
         labels: string[];
         datasets: { name: string; data: number[]; borderColor: string }[];
     }>({ labels: [], datasets: [] });
+    const [changeActiveIndex, setChangeActiveIndex] = useState(0);
 
-    const [tableHeight, setTableHeight] = useState(window.innerHeight - 350);
+    const [tableHeight, setTableHeight] = useState(window.innerHeight - 400);
     useEffect(() => {
         window.addEventListener('resize', () =>
-            setTableHeight(window.innerHeight - 350)
+            setTableHeight(window.innerHeight - 400)
         );
     }, []);
 
@@ -218,7 +217,6 @@ const MainContent: SFC = () => {
     };
 
     const userStoreData = useSelector(getUsers)?.data;
-    console.log(userStoreData);
     const getDataFunc = async () => {
         if (!userStoreData.length) {
             setLoading(true);
@@ -318,10 +316,12 @@ const MainContent: SFC = () => {
                 last_name: newUser.last_name,
                 national_id: newUser.national_id,
                 phone: newUser.phone,
-                commissions: {
-                    wage_percent: newUser.wage_percent,
-                    marketing_percent: newUser.marketing_percent,
-                },
+                commissions: [
+                    {
+                        wage_percent: newUser.wage_percent,
+                        marketing_percent: newUser.marketing_percent,
+                    },
+                ],
             };
             await createUsersList(dispatch, data);
             toast.success('کاربر با موفقیت ایجاد شد.');
@@ -349,9 +349,8 @@ const MainContent: SFC = () => {
 
     const handleDetailsClick = async (detail) => {
         const response = await getUser(dispatch, detail.national_id);
-        console.log(response);
         response.forEach((e) => {
-            e.total_wage = e.total_wage.toFixed(1);
+            e.total_commission = e.total_commission?.toFixed(1);
         });
         setDetail(response);
         setSelectedUser(detail);
@@ -370,7 +369,10 @@ const MainContent: SFC = () => {
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.setAttribute('download', 'user.xlsx');
+                link.setAttribute(
+                    'download',
+                    `گزارش جامع کارمزد بازاریاب ${selectedUser.full_name}.xlsx`
+                );
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
@@ -398,7 +400,10 @@ const MainContent: SFC = () => {
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'user.xlsx');
+            link.setAttribute(
+                'download',
+                `گزارش کارمزد بازاریاب ${selectedUser.full_name} ${selectedUser2.full_name}.xlsx`
+            );
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -418,7 +423,6 @@ const MainContent: SFC = () => {
     const changeStatusFunc = async (detail) => {
         try {
             await editUser(dispatch, detail.national_id, {
-                ...detail,
                 is_active: !detail.is_active,
             });
             toast.success('وضعیت با موفقیت تغییر یافت.');
@@ -444,6 +448,16 @@ const MainContent: SFC = () => {
         }
     };
 
+    function numberFormatter(number: number) {
+        const isNegative = number < 0;
+        const absNumberStr = Math.abs(number).toString();
+        const formattedNumber = absNumberStr.replace(
+            /\B(?=(\d{3})+(?!\d))/g,
+            ','
+        );
+        return isNegative ? `(${formattedNumber})` : formattedNumber;
+    }
+
     const handleDetailsClick2 = async (e) => {
         try {
             const res = await getUserDetail(
@@ -454,7 +468,6 @@ const MainContent: SFC = () => {
                     ticker: e.ticker,
                 }
             );
-            console.log(res);
             if (res.ddn_history_chart && res.ddn_history_chart.length > 0) {
                 const chartData = res.ddn_history_chart[0] as {
                     [key: string]: { total_count: number[]; dates: string[] };
@@ -482,6 +495,9 @@ const MainContent: SFC = () => {
             }
 
             if (res.ddn_history && res.ddn_history.length > 0) {
+                res.ddn_history.forEach((e) => {
+                    e.shares = numberFormatter(Number(e.shares.toFixed(2)));
+                });
                 setDdnHistory(res.ddn_history);
             }
 
@@ -491,8 +507,6 @@ const MainContent: SFC = () => {
     };
 
     const handleDeleteClick = async (e) => {
-        console.log(selectedUser);
-        console.log(e);
         try {
             await deleteUser(dispatch, selectedUser.national_id, {
                 national_id: e.national_id,
@@ -565,7 +579,7 @@ const MainContent: SFC = () => {
             <S.Container>
                 <h1 className="text-right mb-14 px-10 text-4xl">کاربران</h1>
                 <div className="flex mt-10 mb-2 gap-5 justify-between flex-wrap items-center px-2.5">
-                    <div className="flex gap-5">
+                    <div className="flex gap-2">
                         <Button
                             label="ایجاد کاربر جدید"
                             onClick={() => {
@@ -706,16 +720,18 @@ const MainContent: SFC = () => {
                                 </label>
                             </S.FloatLabelSection>
                             <S.FloatLabelSection>
-                                <S.FloatLabelInput
+                                <S.FloatNumInput
                                     id="email"
                                     value={newUser.wage_percent}
                                     onChange={(e) =>
                                         setNewUser((prev) => ({
                                             ...prev,
-                                            wage_percent: e.target.value,
+                                            wage_percent: e.value,
                                         }))
                                     }
-                                    keyfilter="int"
+                                    minFractionDigits={1}
+                                    maxFractionDigits={1}
+                                    step={0.5}
                                 />
                                 <label
                                     htmlFor="email"
@@ -725,16 +741,18 @@ const MainContent: SFC = () => {
                                 </label>
                             </S.FloatLabelSection>
                             <S.FloatLabelSection>
-                                <S.FloatLabelInput
+                                <S.FloatNumInput
                                     id="email"
                                     value={newUser.marketing_percent}
                                     onChange={(e) =>
                                         setNewUser((prev) => ({
                                             ...prev,
-                                            marketing_percent: e.target.value,
+                                            marketing_percent: e.value,
                                         }))
                                     }
-                                    keyfilter="int"
+                                    minFractionDigits={1}
+                                    maxFractionDigits={1}
+                                    step={0.5}
                                 />
                                 <label
                                     htmlFor="email"
@@ -784,7 +802,10 @@ const MainContent: SFC = () => {
                         draggable={false}
                         resizable={false}
                     >
-                        <div className="flex justify-end mb-5">
+                        <div className="flex justify-between items-center mb-5">
+                            <AddCustomer
+                                idCustomer={selectedUser.national_id}
+                            />
                             <Button
                                 onClick={exportData}
                                 icon="pi pi-download"
@@ -801,7 +822,7 @@ const MainContent: SFC = () => {
                         />
                     </S.DialogStyle>
                     <S.DialogStyle
-                        header={selectedUser?.full_name}
+                        header={selectedUser2?.full_name}
                         visible={detailModal2}
                         style={detailDialogStyle}
                         headerStyle={headerStyle}
@@ -829,7 +850,6 @@ const MainContent: SFC = () => {
                             rowsOption={10}
                         />
 
-                        {/* <h3 className="font-bold">نمودار سرمایه‌گذاری</h3> */}
                         <div className="flex justify-center mt-10">
                             <LineChart
                                 datasets={ddnHistoryChart.datasets}
@@ -1013,41 +1033,86 @@ const MainContent: SFC = () => {
                         </div>
                     </S.DialogStyle>
                 </div>
-                {loading ? (
-                    <div
-                        className="spinner-container"
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: '200px',
-                        }}
-                    >
-                        <ProgressSpinner
-                            style={{ width: '50px', height: '50px' }}
-                            strokeWidth="8"
-                            fill="transparent"
-                            animationDuration=".5s"
-                        />
-                    </div>
-                ) : error ? (
-                    <div
-                        className="error-message"
-                        style={{ textAlign: 'center', color: 'red' }}
-                    >
-                        {error}
-                    </div>
-                ) : (
-                    <DataTable
-                        data={usersData}
-                        columnFields={columnFields}
-                        onDetailsClick={handleDetailsClick}
-                        onEditClick={handleEditClick}
-                        onChangeStatusClick={handleChangeStatusClick}
-                        pagination
-                        scrollHeight={tableHeight + 'px'}
-                    />
-                )}
+                <TabView
+                    activeIndex={changeActiveIndex}
+                    onTabChange={(e) => setChangeActiveIndex(e.index)}
+                    className=""
+                >
+                    <TabPanel header="کاربران فعال">
+                        {loading ? (
+                            <div
+                                className="spinner-container"
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    height: '200px',
+                                }}
+                            >
+                                <ProgressSpinner
+                                    style={{ width: '50px', height: '50px' }}
+                                    strokeWidth="8"
+                                    fill="transparent"
+                                    animationDuration=".5s"
+                                />
+                            </div>
+                        ) : error ? (
+                            <div
+                                className="error-message"
+                                style={{ textAlign: 'center', color: 'red' }}
+                            >
+                                {error}
+                            </div>
+                        ) : (
+                            <DataTable
+                                data={usersData.filter((e) => e.is_active)}
+                                columnFields={columnFields}
+                                onDetailsClick={handleDetailsClick}
+                                onEditClick={handleEditClick}
+                                onChangeStatusClick={handleChangeStatusClick}
+                                pagination
+                                scrollHeight={tableHeight + 'px'}
+                            />
+                        )}
+                    </TabPanel>
+                    <TabPanel header="کاربران غیرفعال">
+                        {loading ? (
+                            <div
+                                className="spinner-container"
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    height: '200px',
+                                }}
+                            >
+                                <ProgressSpinner
+                                    style={{ width: '50px', height: '50px' }}
+                                    strokeWidth="8"
+                                    fill="transparent"
+                                    animationDuration=".5s"
+                                />
+                            </div>
+                        ) : error ? (
+                            <div
+                                className="error-message"
+                                style={{ textAlign: 'center', color: 'red' }}
+                            >
+                                {error}
+                            </div>
+                        ) : (
+                            <DataTable
+                                data={usersData.filter((e) => !e.is_active)}
+                                columnFields={columnFields}
+                                onDetailsClick={handleDetailsClick}
+                                onEditClick={handleEditClick}
+                                onChangeStatusClick={handleChangeStatusClick}
+                                pagination
+                                scrollHeight={tableHeight + 'px'}
+                            />
+                        )}{' '}
+                    </TabPanel>
+                </TabView>
             </S.Container>
         </div>
     );

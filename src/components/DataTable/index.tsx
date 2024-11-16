@@ -98,7 +98,11 @@ const DataTable: FC<UserTableProps | any> = ({
             return rowData[field] === 'W' ? 'زن' : 'مرد';
         }
         if (field === 'inv_type') {
-            return rowData[field] === 'I' ? 'حقیقی' : 'حقوقی';
+            return rowData[field] === 'I'
+                ? 'حقیقی'
+                : rowData[field] === 'L'
+                  ? 'حقوقی'
+                  : rowData[field];
         }
         if (field === 'value') {
             return Math.trunc(rowData[field] / 1000000000);
@@ -223,7 +227,8 @@ const DataTable: FC<UserTableProps | any> = ({
                             col.field === 'lastAssets' ||
                             col.field === 'presentAssets' ||
                             col.field === 'changeAssets' ||
-                            col.field === 'price'
+                            col.field === 'price' ||
+                            col.sortable
                         }
                         style={{
                             width: `${col.width}`,

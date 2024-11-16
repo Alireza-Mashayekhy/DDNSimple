@@ -9,10 +9,10 @@ import {
     customersSuccess,
 } from '@/redux/store/customersData';
 
-export const fetchCustomersData = () => async (dispatch: AppDispatch) => {
+export const fetchCustomersData = (params) => async (dispatch: AppDispatch) => {
     dispatch(customersRequest());
     try {
-        const data: Customers[] = await api.getCustomersData();
+        const data: Customers[] = await api.getCustomersData(params);
         dispatch(setCustomersData(data));
         dispatch(customersSuccess());
     } catch (error) {

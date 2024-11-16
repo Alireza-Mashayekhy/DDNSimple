@@ -21,6 +21,8 @@ import loanLight from '@/assets/loanLight.png';
 import calendarDark from '@/assets/calendarDark.png';
 import calendarLight from '@/assets/calendarLight.png';
 import background from '@/assets/customersBack.jpg';
+import { transactionsCustomers } from '@/api/customers';
+import { getUserData } from '@/utils/authentication';
 
 export default function Customers() {
     const [infoModalVisible, setInfoModalVisible] = useState(false);
@@ -32,6 +34,7 @@ export default function Customers() {
     const [search, setSearch] = useState(null);
     const [removeModalVisible, setRemoveModalVisible] = useState(false);
     const [selectedRemoveCustomer, setSelectedRemoveCustomer] = useState(null);
+    const [selectedCustomers, setSelectedCustomers] = useState([]);
 
     const theme = useSelector(getTheme);
 
@@ -75,29 +78,26 @@ export default function Customers() {
                 toast(error.message);
             });
     };
+    const userData = getUserData();
 
-    const exportData = () => {
+    const exportData = async () => {
         if (customers) {
-            exportCustomersData()
-                .then((res) => {
-                    const contentDisposition =
-                        res.headers['content-disposition'];
-                    const filename = contentDisposition
-                        ? contentDisposition.split('filename=')[1].split(';')[0]
-                        : 'customers.csv';
-
-                    const blob = new Blob([res.data], { type: 'text/csv' });
-                    const link = document.createElement('a');
-                    link.href = window.URL.createObjectURL(blob);
-                    link.setAttribute('download', filename);
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    toast('با موفقیت ذخیره شد.');
-                })
-                .catch((error) => {
-                    toast(error.message);
-                });
+            try {
+                const response = await exportCustomersData();
+                const url = window.URL.createObjectURL(response.data);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute(
+                    'download',
+                    `گزارش جامع ${userData.first_name || ''} ${userData.last_name || ''}.xlsx`
+                );
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                toast('با موفقیت ذخیره شد.');
+            } catch (error: any) {
+                toast(error.message || 'خطایی رخ داد.');
+            }
         }
     };
 
@@ -123,6 +123,16 @@ export default function Customers() {
             });
     };
 
+    function numberFormatter(number: number) {
+        const isNegative = number < 0;
+        const absNumberStr = Math.abs(number).toString();
+        const formattedNumber = absNumberStr.replace(
+            /\B(?=(\d{3})+(?!\d))/g,
+            ','
+        );
+        return isNegative ? `(${formattedNumber})` : formattedNumber;
+    }
+
     const footerContent = (
         <S.FooterContainer>
             <S.FooterButton
@@ -138,6 +148,31 @@ export default function Customers() {
         </S.FooterContainer>
     );
 
+    const checkSelectedCustomer = (checked, customer) => {
+        setSelectedCustomers((prevSelectedCustomers) => {
+            if (checked) {
+                return [...prevSelectedCustomers, customer];
+            } else {
+                return prevSelectedCustomers.filter((c) => c !== customer);
+            }
+        });
+    };
+
+    const transactions = async () => {
+        if (selectedCustomers.length) {
+            const data = selectedCustomers.map((e) => {
+                return {
+                    ticker: e.ticker,
+                    national_id: e.national_id,
+                };
+            });
+            await transactionsCustomers({ customers: data });
+            toast.success('تسویه با موفقیت انجام شد');
+        } else {
+            toast.error('حداقل یک مشتری را انتخاب کنید.');
+        }
+    };
+
     return (
         <div className="relative p-5 pt-12">
             <S.Background $url={background} />
@@ -150,6 +185,9 @@ export default function Customers() {
                     <AddCustomer />
                     <S.DownloadButton onClick={exportData}>
                         دانلود گزارش
+                    </S.DownloadButton>
+                    <S.DownloadButton onClick={transactions}>
+                        تسویه
                     </S.DownloadButton>
                 </S.HeaderButtons>
                 <S.FloatLabelSection>
@@ -193,7 +231,14 @@ export default function Customers() {
                         {filteredCustomers?.map((customer) => (
                             <S.GridItem
                                 key={customer.national_id}
-                                onClick={() => customerClickHandler(customer)}
+                                onClick={(
+                                    e: React.MouseEvent<HTMLDivElement>
+                                ) =>
+                                    e.target instanceof HTMLInputElement &&
+                                    e.target.type === 'checkbox'
+                                        ? ''
+                                        : customerClickHandler(customer)
+                                }
                             >
                                 <S.Clear
                                     className={'trash'}
@@ -206,6 +251,20 @@ export default function Customers() {
                                 >
                                     <S.ClearIcon path={mdiTrashCan} size={1} />
                                 </S.Clear>
+                                {customer.status_Withdrawal_money && (
+                                    <S.SelectInput
+                                        type="checkbox"
+                                        position={'absolute'}
+                                        top={'15px'}
+                                        left={'15px'}
+                                        onChange={(e) =>
+                                            checkSelectedCustomer(
+                                                e.target.checked,
+                                                customer
+                                            )
+                                        }
+                                    />
+                                )}
                                 <S.ItemImage
                                     size="xlarge"
                                     shape={'circle'}
@@ -250,8 +309,38 @@ export default function Customers() {
                                             className="w-5"
                                         />
                                     </S.ItemTitle>
-                                    {customer.total_wage?.toFixed(1)} میلیون
-                                    ریال
+                                    مبلغ کل:{' '}
+                                    {numberFormatter(
+                                        Number(
+                                            (
+                                                customer.total_commission /
+                                                1000000
+                                            )?.toFixed(1)
+                                        )
+                                    )}{' '}
+                                    میلیون ریال
+                                </S.ItemAttribute>
+                                <S.ItemAttribute>
+                                    <S.ItemTitle className="items-center flex">
+                                        <img
+                                            src={
+                                                theme === 'dark'
+                                                    ? loanLight
+                                                    : loanDark
+                                            }
+                                            className="w-5"
+                                        />
+                                    </S.ItemTitle>
+                                    مبلغ قابل برداشت:{' '}
+                                    {numberFormatter(
+                                        Number(
+                                            (
+                                                customer.payable_commission /
+                                                1000000
+                                            )?.toFixed(1)
+                                        )
+                                    )}{' '}
+                                    میلیون ریال
                                 </S.ItemAttribute>
                             </S.GridItem>
                         ))}
@@ -261,8 +350,26 @@ export default function Customers() {
                         {filteredCustomers?.map((customer) => (
                             <S.ListItem
                                 key={customer.national_id}
-                                onClick={() => customerClickHandler(customer)}
+                                onClick={(
+                                    e: React.MouseEvent<HTMLDivElement>
+                                ) => {
+                                    e.target instanceof HTMLInputElement &&
+                                    e.target.type === 'checkbox'
+                                        ? ''
+                                        : customerClickHandler(customer);
+                                }}
                             >
+                                {customer.status_Withdrawal_money && (
+                                    <S.SelectInput
+                                        type="checkbox"
+                                        onChange={(e) =>
+                                            checkSelectedCustomer(
+                                                e.target.checked,
+                                                customer
+                                            )
+                                        }
+                                    />
+                                )}
                                 <S.ItemImage
                                     size="xlarge"
                                     width={'45px'}
@@ -310,8 +417,38 @@ export default function Customers() {
                                             className="w-5"
                                         />
                                     </S.ItemTitle>
-                                    {customer.total_wage?.toFixed(1)} میلیون
-                                    ریال
+                                    مبلغ کل:{' '}
+                                    {numberFormatter(
+                                        Number(
+                                            (
+                                                customer.total_commission /
+                                                1000000
+                                            )?.toFixed(1)
+                                        )
+                                    )}{' '}
+                                    میلیون ریال
+                                </S.ItemAttribute>
+                                <S.ItemAttribute>
+                                    <S.ItemTitle className="items-center flex">
+                                        <img
+                                            src={
+                                                theme === 'dark'
+                                                    ? loanLight
+                                                    : loanDark
+                                            }
+                                            className="w-5"
+                                        />
+                                    </S.ItemTitle>
+                                    مبلغ قابل برداشت:{' '}
+                                    {numberFormatter(
+                                        Number(
+                                            (
+                                                customer.payable_commission /
+                                                1000000
+                                            )?.toFixed(1)
+                                        )
+                                    )}{' '}
+                                    میلیون ریال
                                 </S.ItemAttribute>
                                 <S.ItemAttribute>
                                     <S.Clear

@@ -2,6 +2,7 @@ import { inputStyle } from '@/styles';
 import { inputTextStyle } from '@/styles/mixins';
 import { Dialog } from 'primereact/dialog';
 import { FloatLabel } from 'primereact/floatlabel';
+import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import styled from 'styled-components';
 
@@ -43,6 +44,28 @@ export const FloatLabelInput = styled(InputText)`
         border: none !important;
         box-shadow: none !important;
         border-bottom: 1px solid ${({ theme }) => theme.textColor} !important;
+    }
+`;
+
+export const FloatNumInput = styled(InputNumber)`
+    input {
+        background-color: transparent !important;
+        color: ${({ theme }) => theme.textColor} !important;
+        margin: 0 !important;
+        width: 190px;
+        height: 35px;
+        border-radius: 0px;
+        outline: none !important;
+        border: none !important;
+        direction: ltr;
+        border-bottom: 1px solid ${({ theme }) => theme.textColor} !important;
+        font-size: 0.875rem;
+        &:focus {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-bottom: 1px solid ${({ theme }) => theme.textColor} !important;
+        }
     }
 `;
 

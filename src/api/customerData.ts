@@ -1,3 +1,4 @@
+import { logout } from '@/dispatchers/authentication';
 import {
     authorizationFormHeaders,
     authorizationHeaders,
@@ -14,14 +15,7 @@ export const getCustomers = async () => {
             authorizationHeaders()
         );
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error: unknown) {}
 };
 
 export const getCustomer = async (customer) => {
@@ -38,14 +32,7 @@ export const getCustomer = async (customer) => {
             }
         );
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error: unknown) {}
 };
 
 export const updateProfile = async (formData) => {
@@ -56,14 +43,7 @@ export const updateProfile = async (formData) => {
             authorizationFormHeaders()
         );
         return response;
-    } catch (error) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error) {}
 };
 
 export const removeCustomerApi = async ({
@@ -86,14 +66,7 @@ export const removeCustomerApi = async ({
             }
         );
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error: unknown) {}
 };
 
 export const exportCustomersData = async () => {
@@ -108,14 +81,7 @@ export const exportCustomersData = async () => {
             }
         );
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error: unknown) {}
 };
 
 export const addCustomer = async ({
@@ -139,14 +105,33 @@ export const addCustomer = async ({
             }
         );
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error: unknown) {}
+};
+
+export const addAdminCustomer = async ({
+    id,
+    national_id,
+    ticker,
+}: {
+    id: number;
+    national_id: string;
+    ticker: string;
+}) => {
+    try {
+        const response = await axios.post(
+            `${BASE_URL}/auth/marketers/${id}/create_customer/`,
+            {
+                national_id,
+                ticker,
+            },
+            {
+                headers: {
+                    Authorization: getAccess(),
+                },
+            }
+        );
+        return response;
+    } catch (error: unknown) {}
 };
 
 export const getTickers = async () => {
@@ -157,31 +142,22 @@ export const getTickers = async () => {
             },
         });
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error: unknown) {}
 };
 
-export const getCustomersData = async () => {
+export const getCustomersData = async (dispatch, params) => {
     try {
         const response = await axios.get(`${BASE_URL}/clclub/customersdata/`, {
+            params,
             headers: {
                 Authorization: getAccess(),
             },
         });
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
+    } catch (error) {
+        if (error.response.status === 401) {
+            dispatch(logout());
         }
-        throw error;
     }
 };
 
@@ -200,12 +176,5 @@ export const exportCustomerData = async (customer) => {
             }
         );
         return response;
-    } catch (error: unknown) {
-        if (error instanceof AxiosError) {
-            throw new Error(
-                error.response?.data?.detail || 'خطایی رخ داده است!'
-            );
-        }
-        throw error;
-    }
+    } catch (error: unknown) {}
 };

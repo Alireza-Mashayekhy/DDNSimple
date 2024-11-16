@@ -159,7 +159,7 @@ const dialogStyle = {
 
 const MainContent = () => {
     const [selectedTicker, setSelectedTicker] = useState<string | undefined>(
-        'سیناد'
+        'پایا'
     );
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
     const [ddnHistoryLoading, setDdnHistoryLoading] = useState(false);
@@ -291,7 +291,7 @@ const MainContent = () => {
         link.href = url;
         link.setAttribute(
             'download',
-            `گزارش سرمایه گذاری ${full_name} ${selectedTicker}.xlsx`
+            `گزارش سرمایه‌گذاری ${full_name} ${selectedTicker}.xlsx`
         );
         document.body.appendChild(link);
         link.click();
@@ -307,14 +307,14 @@ const MainContent = () => {
     const getCustomerDataFunc = async () => {
         if (!customers.length) {
             setDdnHistoryLoading(true);
-            await dispatch(fetchCustomersData());
+            await dispatch(fetchCustomersData({ ticker: selectedTicker }));
             setDdnHistoryLoading(false);
         }
     };
 
     useEffect(() => {
         getCustomerDataFunc();
-    }, []);
+    }, [selectedTicker]);
 
     const searchTicker = (event: { query: string }) => {
         let query = event.query;
@@ -366,7 +366,7 @@ const MainContent = () => {
     };
 
     useEffect(() => {
-        loadDdnHistories('سیناد');
+        loadDdnHistories('پایا');
     }, []);
 
     const downloadDdnHistories = async () => {
@@ -393,7 +393,7 @@ const MainContent = () => {
             link.href = url;
             link.setAttribute(
                 'download',
-                `گزارش جامع سرمایه گذاران ${selectedTicker} ${ddnHistories[0].date}.xlsx`
+                `گزارش جامع سرمایه‌گذاران ${selectedTicker} ${ddnHistories[0].date}.xlsx`
             );
             document.body.appendChild(link);
             link.click();
@@ -438,7 +438,6 @@ const MainContent = () => {
             const chartData = response.ddn_history_chart[0];
             const datasets = Object.entries(chartData)?.map(
                 ([ticker, data]) => {
-                    console.log(data);
                     return {
                         name: ticker,
                         data: data?.total_count?.reverse(),

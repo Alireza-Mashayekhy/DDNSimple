@@ -19,6 +19,12 @@ interface ClearProps {
     right?: string;
 }
 
+interface SelectInputProps {
+    position?: string;
+    top?: string;
+    left?: string;
+}
+
 export const Container = styled.div`
     width: 100%;
     height: 100%;
@@ -166,13 +172,15 @@ export const ListItem = styled.div`
     height: 100%;
     display: grid;
     align-items: center;
-    grid-template-columns: 0.5fr 2fr 1fr 1.5fr 1fr 0.5fr;
-    background: ${({ theme }) => theme.primary};
+    grid-template-columns: 0.2fr 0.5fr 2fr 0.5fr 1fr 2fr 2fr 0.5fr;
+    background: ${({ theme }) => theme.primary} !important;
     padding: 10px 15px 10px 0px;
     border-radius: 10px;
     gap: 5px;
     cursor: pointer;
     border: 1px solid ${({ theme }) => theme.border};
+    position: relative;
+    z-index: 2;
 `;
 
 export const ItemImage = styled(Avatar)<ItemImageProps>`
@@ -216,6 +224,22 @@ export const Clear = styled.div<ClearProps>`
     top: ${({ top }) => top || 'unset'};
     right: ${({ right }) => right || 'unset'};
     transition: all 0.5s;
+    &:hover {
+        background: ${({ theme }) => theme.secondary};
+    }
+`;
+
+export const SelectInput = styled.input<SelectInputProps>`
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    cursor: pointer;
+    position: ${({ position }) => position || 'relative'};
+    top: ${({ top }) => top || 'unset'};
+    left: ${({ left }) => left || 'unset'};
     &:hover {
         background: ${({ theme }) => theme.secondary};
     }

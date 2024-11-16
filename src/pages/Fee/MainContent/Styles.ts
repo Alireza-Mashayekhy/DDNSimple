@@ -1,6 +1,7 @@
 import { inputStyle } from '@/styles';
 import { dropDownStyle } from '@/styles/mixins';
 import { AutoComplete } from 'primereact/autocomplete';
+import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
@@ -52,4 +53,13 @@ export const Background = styled.div<{ $url: string }>`
     position: absolute;
     width: 100%;
     height: 70vh;
+`;
+
+export const DialogStyle = styled(Dialog)`
+    .p-icon {
+        color: ${({ theme }) => theme.textColor} !important;
+    }
+    .p-dialog-footer {
+        background: ${({ theme }) => theme.primary} !important;
+    }
 `;

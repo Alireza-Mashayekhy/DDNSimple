@@ -11,7 +11,7 @@ import marketerHomeBack from '@/assets/marketerHomeBack.jpg';
 const MainContent: SFC = () => {
     const userData = getUserData();
     const role = userData?.role;
-    console.log(role);
+    console.log(userData);
 
     const theme = useSelector(getTheme);
     // if (role === 'MANAGER') {
