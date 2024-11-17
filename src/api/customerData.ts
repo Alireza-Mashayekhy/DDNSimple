@@ -110,20 +110,19 @@ export const addCustomer = async ({
 
 export const addAdminCustomer = async ({
     id,
-    national_id,
-    ticker,
+    params,
 }: {
     id: number;
-    national_id: string;
-    ticker: string;
+    params: {
+        stock_id?: string;
+        national_id?: string;
+        ticker: string;
+    };
 }) => {
     try {
         const response = await axios.post(
             `${BASE_URL}/auth/marketers/${id}/create_customer/`,
-            {
-                national_id,
-                ticker,
-            },
+            params,
             {
                 headers: {
                     Authorization: getAccess(),
@@ -131,7 +130,9 @@ export const addAdminCustomer = async ({
             }
         );
         return response;
-    } catch (error: unknown) {}
+    } catch (error: any) {
+        throw error;
+    }
 };
 
 export const getTickers = async () => {
