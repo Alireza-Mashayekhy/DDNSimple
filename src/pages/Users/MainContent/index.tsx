@@ -729,8 +729,8 @@ const MainContent: SFC = () => {
                                             wage_percent: e.value,
                                         }))
                                     }
-                                    minFractionDigits={1}
-                                    maxFractionDigits={1}
+                                    minFractionDigits={0}
+                                    maxFractionDigits={3}
                                     step={0.5}
                                 />
                                 <label
@@ -750,8 +750,8 @@ const MainContent: SFC = () => {
                                             marketing_percent: e.value,
                                         }))
                                     }
-                                    minFractionDigits={1}
-                                    maxFractionDigits={1}
+                                    minFractionDigits={0}
+                                    maxFractionDigits={3}
                                     step={0.5}
                                 />
                                 <label

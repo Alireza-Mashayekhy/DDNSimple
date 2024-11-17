@@ -21,6 +21,13 @@ import { fetchFeeData as _fetchFeeData } from '@/dispatchers/fee';
 import FeeBack from '@/assets/feeBack.jpg';
 import { getAccess } from '@/utils/authentication';
 
+function numberFormatter(number: number) {
+    const isNegative = number < 0;
+    const absNumberStr = Math.abs(number).toString();
+    const formattedNumber = absNumberStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return isNegative ? `(${formattedNumber})` : formattedNumber;
+}
+
 const wageColumnFields = [
     {
         field: 'full_name',
@@ -48,6 +55,14 @@ const wageColumnFields = [
         width: '10%',
     },
     {
+        field: 'marketer_commission',
+        header: 'کارمزد بازاریاب (ریال)',
+        width: '10%',
+        body: (data) => {
+            return numberFormatter(Number(data.marketer_commission.toFixed(2)));
+        },
+    },
+    {
         field: 'details',
         header: 'جزئیات',
         width: '10%',
@@ -72,12 +87,28 @@ const DetailColumnFields = [
     },
     {
         field: 'commission',
-        header: 'کارمزد',
+        header: 'کارمزد مدیر(ریال)',
         width: '10%',
+        body: (data) => {
+            return numberFormatter(Number(data.commission));
+        },
+    },
+    {
+        field: 'marketer_commission',
+        header: 'کارمزد بازاریاب (ریال)',
+        width: '10%',
+        body: (data) => {
+            return numberFormatter(Number(data.marketer_commission.toFixed(2)));
+        },
     },
     {
         field: 'wage',
-        header: 'درصد دستمزد',
+        header: 'درصد کارمزد مدیر',
+        width: '10%',
+    },
+    {
+        field: 'marketer_wage',
+        header: 'درصد سهم بازاریاب',
         width: '10%',
     },
 ];
@@ -104,6 +135,7 @@ const MainContent: SFC = () => {
     const [lastname, setLastname] = useState('');
     const [nationalId, setNationalId] = useState('');
     const [wage, setWage] = useState(0.5);
+    const [marketerWage, setMarketerWage] = useState(50);
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
     const [loading, setLoading] = useState(false);
@@ -133,6 +165,7 @@ const MainContent: SFC = () => {
         stock_id: '',
         ticker: '',
         wage: '',
+        marketer_wage: '',
     });
     const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
     const customerData = useSelector(getCustomersData)?.data;
@@ -203,6 +236,7 @@ const MainContent: SFC = () => {
                 wage?: number;
                 stock_id?: string;
                 national_id?: string;
+                marketer_wage?: number;
             } = {
                 fund: fund,
             };
@@ -225,6 +259,9 @@ const MainContent: SFC = () => {
             }
             if (wage) {
                 params.wage = wage;
+            }
+            if (marketerWage) {
+                params.marketer_wage = marketerWage;
             }
             setSearchedData(params);
 
@@ -291,6 +328,7 @@ const MainContent: SFC = () => {
             start_date: searchedData.start_date ? searchedData.start_date : '',
             end_date: searchedData.end_date ? searchedData.end_date : '',
             export: true,
+            marketer_wage: selectedUser.marketer_wage,
         };
         params.wage = selectedUser.wage || wage || 0.5;
 
@@ -325,6 +363,9 @@ const MainContent: SFC = () => {
         };
         if (wage) {
             params.wage = wage;
+        }
+        if (marketerWage) {
+            params.marketer_wage = marketerWage;
         }
         if (selectedType === 'کد بورسی' && stockId) {
             params.stock_id = stockId;
@@ -631,10 +672,31 @@ const MainContent: SFC = () => {
                                             onValueChange={(e) =>
                                                 setWage(e.value ?? 0)
                                             }
-                                            minFractionDigits={1}
-                                            maxFractionDigits={1}
+                                            minFractionDigits={0}
+                                            maxFractionDigits={3}
                                             step={0.5}
                                             placeholder="نرخ کارمزد"
+                                            mode="decimal"
+                                            min={0}
+                                            max={100}
+                                        />
+                                    </div>
+                                    <div className="flex  gap-2 flex-col">
+                                        <label
+                                            htmlFor="stockId"
+                                            className="whitespace-nowrap text-start"
+                                        >
+                                            درصد بازاریاب (%) :
+                                        </label>
+                                        <S.NumInput
+                                            value={marketerWage}
+                                            onValueChange={(e) =>
+                                                setMarketerWage(e.value ?? 0)
+                                            }
+                                            minFractionDigits={0}
+                                            maxFractionDigits={3}
+                                            step={0.5}
+                                            placeholder="درصد بازاریاب"
                                             mode="decimal"
                                             min={0}
                                             max={100}

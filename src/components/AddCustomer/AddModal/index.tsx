@@ -52,22 +52,33 @@ const AddModal: SFC<AddCustomerModalProps> = ({
 
     const add = async () => {
         if (idCustomer) {
-            if (ticker && name && nationalCode && stickCode) {
+            if (ticker && stickCode) {
                 try {
                     const customerInfo = {
-                        id: idCustomer,
-                        national_id: nationalCode,
+                        stock_id: stickCode,
                         ticker: ticker,
                     };
-                    const res = await addAdminCustomer(customerInfo);
+                    const res = await addAdminCustomer({
+                        id: idCustomer,
+                        params: customerInfo,
+                    });
                     setVisibleProp(false);
                     if (res) {
                         window.location.reload();
-                    } else {
-                        toast.error('این کاربر قبلا اضافه شده است');
                     }
                 } catch (error) {
-                    toast.error(error.message);
+                    if (
+                        error.response.data.message ===
+                        'Customer does not exist'
+                    ) {
+                        toast.error('کاربر مورد نظر وجود ندارد.');
+                    } else if (
+                        error.response.data.message === 'already exists'
+                    ) {
+                        toast.error('کاربر مورد نظر قبلا اضافه شده است.');
+                    } else {
+                        console.log(error);
+                    }
                 }
             } else {
                 toast.error('لطفا فیلد های خالی را پر کنید!');
@@ -161,18 +172,22 @@ const AddModal: SFC<AddCustomerModalProps> = ({
                         placeholder="لطفاً یک نماد را انتخاب کنید."
                     />
                 </S.InputContainer>
-                <S.InputContainer>
-                    <S.InputLabel htmlFor="nationalCode">کد ملی *</S.InputLabel>
-                    <S.InputTextStyle
-                        value={nationalCode}
-                        onChange={(e) => {
-                            setNationalCode(e.target.value),
-                                setSearchedCustomer(false);
-                        }}
-                        id="nationalCode"
-                        keyfilter="int"
-                    />
-                </S.InputContainer>
+                {!idCustomer && (
+                    <S.InputContainer>
+                        <S.InputLabel htmlFor="nationalCode">
+                            کد ملی *
+                        </S.InputLabel>
+                        <S.InputTextStyle
+                            value={nationalCode}
+                            onChange={(e) => {
+                                setNationalCode(e.target.value),
+                                    setSearchedCustomer(false);
+                            }}
+                            id="nationalCode"
+                            keyfilter="int"
+                        />
+                    </S.InputContainer>
+                )}
                 <S.InputContainer>
                     <S.InputLabel htmlFor="stickCode">کد بورسی *</S.InputLabel>
                     <S.InputTextStyle
@@ -184,20 +199,25 @@ const AddModal: SFC<AddCustomerModalProps> = ({
                         id="stickCode"
                     />
                 </S.InputContainer>
-                <S.InputContainer>
-                    <S.InputLabel htmlFor="name">نام سهامدار</S.InputLabel>
-                    <S.InputTextStyle
-                        disabled={!idCustomer}
-                        value={name}
-                        onChange={(e) => {
-                            setName(e.target.value), setSearchedCustomer(false);
-                        }}
-                        id="name"
-                    />
-                </S.InputContainer>
-                <div className="text-xs">
-                    کد ملی در مورد شناسه‌های prx ، ۱۲۳۴۵ قید شود
-                </div>
+                {!idCustomer && (
+                    <S.InputContainer>
+                        <S.InputLabel htmlFor="name">نام سهامدار</S.InputLabel>
+                        <S.InputTextStyle
+                            disabled={!idCustomer}
+                            value={name}
+                            onChange={(e) => {
+                                setName(e.target.value),
+                                    setSearchedCustomer(false);
+                            }}
+                            id="name"
+                        />
+                    </S.InputContainer>
+                )}
+                {!idCustomer && (
+                    <div className="text-xs">
+                        کد ملی در مورد شناسه‌های prx ، ۱۲۳۴۵ قید شود
+                    </div>
+                )}
                 <S.FooterContainer>
                     <S.FooterButton
                         label="انصراف"
