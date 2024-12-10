@@ -127,6 +127,28 @@ input {
     width: 100%;
     color: white !important;
 }
+.prime-otp-input {
+    background: transparent;
+    border: none;
+    outline: none !important;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    color: white !important;
+    height: 50px;
+    border-radius: 6px;
+    text-align: center;
+}
+.error-prime-otp-input {
+    background: transparent;
+    border: none;
+    outline: none !important;
+    border: 2px solid #ff000063;
+    width: 100%;
+    color: #ff0000 !important;
+    height: 50px;
+    border-radius: 6px;
+    text-align: center;
+}
 
 .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
     color: #a7a7a7;

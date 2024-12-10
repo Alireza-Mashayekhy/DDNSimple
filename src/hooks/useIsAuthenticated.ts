@@ -1,32 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+
+import { getAuthentication } from '@/selectors/state';
 
 const useIsAuthenticated = (): boolean => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-        // Initial check for token in localStorage or sessionStorage
-        const token =
-            localStorage.getItem('accessToken') ||
-            sessionStorage.getItem('accessToken');
-        return !!token;
-    });
+    const authentication = useSelector(getAuthentication);
+    // const self = useSelector(getSelf);
 
-    useEffect(() => {
-        const handleStorageChange = () => {
-            const token =
-                localStorage.getItem('accessToken') ||
-                sessionStorage.getItem('accessToken');
-            setIsAuthenticated(!!token);
-        };
-
-        // Listen to storage events
-        window.addEventListener('storage', handleStorageChange);
-
-        // Cleanup the event listener on unmount
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-        };
-    }, []);
-
-    return isAuthenticated;
+    return !!authentication.accessToken;
 };
 
 export default useIsAuthenticated;

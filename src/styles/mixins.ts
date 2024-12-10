@@ -405,19 +405,6 @@ export const inputStyle = css`
     }
 `;
 
-export const inputTextStyle = css`
-    background-color: ${({ theme }) => theme.primary} !important;
-    color: ${({ theme }) => theme.textColor} !important;
-    margin: 0 !important;
-    width: 190px;
-    height: 35px;
-    font-size: 0.875rem;
-    &::placeholder {
-        color: ${({ theme }) => theme.hoverText};
-        opacity: 1;
-    }
-`;
-
 export const dropDownStyle = css`
     background-color: ${({ theme }) => theme.primary} !important;
     overflow: hidden;
@@ -440,5 +427,18 @@ export const dropDownStyle = css`
         border-radius: 0px !important;
         background-color: ${({ theme }) => theme.primary} !important;
         color: ${({ theme }) => theme.textColor} !important;
+    }
+`;
+
+export const inputTextStyle = css`
+    background-color: ${({ theme }) => theme.primary} !important;
+    color: ${({ theme }) => theme.textColor} !important;
+    margin: 0 !important;
+    width: 190px;
+    height: 35px;
+    font-size: 0.875rem;
+    &::placeholder {
+        color: ${({ theme }) => theme.hoverText};
+        opacity: 1;
     }
 `;

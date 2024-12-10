@@ -44,6 +44,7 @@ const LineChart: React.FC<LineChartProps> = ({ datasets, labels }) => {
                 color: '#444444',
             },
             axisTicks: {
+                show: false,
                 color: '#444444',
             },
         },

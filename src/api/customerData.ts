@@ -8,14 +8,18 @@ import axios, { AxiosError } from 'axios';
 
 const BASE_URL = `${import.meta.env.VITE_APP_API_URL}`;
 
-export const getCustomers = async () => {
+export const getCustomers = async (dispatch) => {
     try {
         const response = await axios.get(
             `${BASE_URL}/clclub/customers/`,
             authorizationHeaders()
         );
         return response;
-    } catch (error: unknown) {}
+    } catch (error) {
+        if (error.response.status === 401) {
+            dispatch(logout());
+        }
+    }
 };
 
 export const getCustomer = async (customer) => {
@@ -32,7 +36,7 @@ export const getCustomer = async (customer) => {
             }
         );
         return response;
-    } catch (error: unknown) {}
+    } catch (error) {}
 };
 
 export const updateProfile = async (formData) => {
@@ -135,7 +139,7 @@ export const addAdminCustomer = async ({
     }
 };
 
-export const getTickers = async () => {
+export const getTickers = async (dispatch) => {
     try {
         const response = await axios.get(`${BASE_URL}/ddn/stock/`, {
             headers: {
@@ -143,7 +147,11 @@ export const getTickers = async () => {
             },
         });
         return response;
-    } catch (error: unknown) {}
+    } catch (error) {
+        if (error.response.status === 401) {
+            dispatch(logout());
+        }
+    }
 };
 
 export const getCustomersData = async (dispatch, params) => {

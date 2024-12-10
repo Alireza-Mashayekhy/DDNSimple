@@ -1,5 +1,6 @@
 import { inputStyle } from '@/styles';
 import { inputTextStyle } from '@/styles/mixins';
+import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputNumber } from 'primereact/inputnumber';
@@ -94,4 +95,25 @@ export const Background = styled.div<{ $url: string }>`
     position: absolute;
     width: 100%;
     height: 60vh;
+`;
+export const RemoveMessage = styled.span`
+    color: ${({ theme }) => theme.textColor};
+`;
+export const FooterContainer = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+`;
+
+export const FooterButton = styled(Button)`
+    background: ${({ theme }) => theme.secondary};
+    color: ${({ theme }) => theme.textColor};
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    width: fit-content;
+    height: fit-content;
 `;

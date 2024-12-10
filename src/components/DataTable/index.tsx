@@ -218,7 +218,7 @@ const DataTable: FC<UserTableProps | any> = ({
                         style={{ width: '5%' }}
                     />
                 )}
-                {columnFields.map((col: any, index: any) => (
+                {columnFields?.map((col: any, index: any) => (
                     <Column
                         key={index}
                         field={col.field}
@@ -235,9 +235,13 @@ const DataTable: FC<UserTableProps | any> = ({
                             textAlign: col.align || 'center',
                         }}
                         body={
-                            col.field !== 'ticker' && upload
-                                ? (rowData) => statusBodyTemplate(rowData, col)
-                                : (rowData) => bodyTemplate(rowData, col.field)
+                            col.body
+                                ? col.body
+                                : col.field !== 'ticker' && upload
+                                  ? (rowData) =>
+                                        statusBodyTemplate(rowData, col)
+                                  : (rowData) =>
+                                        bodyTemplate(rowData, col.field)
                         }
                     />
                 ))}

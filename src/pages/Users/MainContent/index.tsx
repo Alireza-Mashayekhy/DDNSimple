@@ -26,9 +26,22 @@ import { InputText } from 'primereact/inputtext';
 import usersBack from '@/assets/usersBack.png';
 import AddCustomer from '@/components/AddCustomer';
 import { TabPanel, TabView } from 'primereact/tabview';
+import {
+    deleteTransaction,
+    editTransactionDetail,
+    exportTransactionDetail,
+    getTransactionsList,
+    transactionDetail,
+} from '@/api/customers';
+import AdvanceSearch from '../AdvanceSearch';
 
 const dialogStyle = {
     width: '30vw',
+    borderRadius: '15px',
+    boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)',
+};
+const factorDialogStyle = {
+    width: '80vw',
     borderRadius: '15px',
     boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)',
 };
@@ -37,51 +50,12 @@ const detailDialogStyle = {
     borderRadius: '15px',
     boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)',
 };
-
-const columnFields = [
-    {
-        field: 'is_active',
-        header: '',
-        width: '10%',
-    },
-    {
-        field: 'full_name',
-        header: 'نام کاربر',
-        width: '10%',
-    },
-    {
-        field: 'national_id',
-        header: 'کد ملی',
-        width: '10%',
-    },
-    {
-        field: 'phone',
-        header: 'شماره موبایل',
-        width: '10%',
-    },
-    {
-        field: 'email',
-        header: 'ایمیل',
-        width: '10%',
-        align: 'left',
-    },
-    {
-        field: 'details',
-        header: 'جزییات',
-        width: '10%',
-    },
-    {
-        field: 'edit',
-        header: 'ویرایش',
-        width: '10%',
-    },
-    {
-        field: 'fee_rate',
-        header: 'نرخ کارمزد',
-        width: '10%',
-    },
-];
-
+function numberFormatter(number: number) {
+    const isNegative = number < 0;
+    const absNumberStr = Math.abs(number).toString();
+    const formattedNumber = absNumberStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return isNegative ? `- ${formattedNumber}` : formattedNumber;
+}
 const DetailColumnFields = [
     {
         field: 'delete',
@@ -103,6 +77,13 @@ const DetailColumnFields = [
         field: 'total_commission',
         header: 'کارمزد',
         width: '10%',
+        body: (data) => {
+            return (
+                <div style={{ direction: 'ltr' }}>
+                    {numberFormatter(Number(data.total_commission))}
+                </div>
+            );
+        },
     },
     {
         field: 'count_days',
@@ -124,18 +105,31 @@ const customerDetailColumnFields = [
     },
     {
         field: 'date',
-        header: 'تاریخ گزارش',
+        header: 'تاریخ',
         width: '10%',
     },
     {
         field: 'shares',
-        header: 'سهام کل',
+        header: 'تعداد سهام کل',
+        width: '10%',
+    },
+    {
+        field: 'value',
+        header: 'ارزش کل (ریال)',
         width: '10%',
     },
     {
         field: 'wage',
-        header: 'کارمزد مدیر',
+        header: 'درصد کارمزد بازاریاب',
         width: '10%',
+    },
+    {
+        field: 'commission',
+        header: 'کارمزد بازاریاب',
+        width: '10%',
+        body: (e) => {
+            return e.commission.toFixed(2);
+        },
     },
 ];
 
@@ -143,8 +137,10 @@ const MainContent: SFC = () => {
     const [addUserModal, setAddUserModal] = useState(false);
     const [changeStatusModal, setChangeStatusModal] = useState(false);
     const [detailModal, setDetailModal] = useState(false);
+    const [factorModal, setFactorModal] = useState(false);
     const [editModal, setEditModal] = useState(false);
     const [detail, setDetail] = useState([]);
+    const [transactionsList, setTransactions] = useState([]);
     const [userDetail, setUserDetail] = useState({
         first_name: '',
         last_name: '',
@@ -159,6 +155,9 @@ const MainContent: SFC = () => {
             wage_percent: '',
             marketing_percent: '',
         },
+    });
+    const [selectedFactor, setSelectedFactor] = useState({
+        transaction_id: '',
     });
     const [newUser, setNewUser] = useState({
         first_name: '',
@@ -187,12 +186,16 @@ const MainContent: SFC = () => {
         national_id: '',
     });
     const [detailModal2, setDetailModal2] = useState(false);
+    const [factorDetailModal, setFactorDetailModal] = useState(false);
+
     const [ddnHistory, setDdnHistory] = useState([]);
     const [ddnHistoryChart, setDdnHistoryChart] = useState<{
         labels: string[];
         datasets: { name: string; data: number[]; borderColor: string }[];
     }>({ labels: [], datasets: [] });
     const [changeActiveIndex, setChangeActiveIndex] = useState(0);
+    const [selectedRemoveCustomer, setSelectedRemoveCustomer] = useState(null);
+    const [removeModalVisible, setRemoveModalVisible] = useState(false);
 
     const [tableHeight, setTableHeight] = useState(window.innerHeight - 400);
     useEffect(() => {
@@ -202,6 +205,168 @@ const MainContent: SFC = () => {
     }, []);
 
     const theme = useSelector(getTheme);
+
+    const factorDetailColumnFields = [
+        {
+            field: 'full_name',
+            header: 'نام مشتری',
+            width: '10%',
+        },
+        {
+            field: 'commission',
+            header: 'کارمزد تسویه شده',
+            width: '10%',
+        },
+        {
+            field: 'jalali_date',
+            header: 'تاریخ',
+            width: '10%',
+        },
+    ];
+
+    const columnFields = [
+        {
+            field: 'is_active',
+            header: '',
+            width: '10%',
+        },
+        {
+            field: 'full_name',
+            header: 'نام کاربر',
+            width: '10%',
+        },
+        {
+            field: 'national_id',
+            header: 'کد ملی',
+            width: '10%',
+        },
+        {
+            field: 'phone',
+            header: 'شماره موبایل',
+            width: '10%',
+        },
+        {
+            field: 'email',
+            header: 'ایمیل',
+            width: '10%',
+            align: 'left',
+        },
+        {
+            field: 'details',
+            header: 'جزییات',
+            width: '10%',
+        },
+        {
+            field: 'edit',
+            header: 'ویرایش',
+            width: '10%',
+        },
+        {
+            field: 'fee_rate',
+            header: 'نرخ کارمزد',
+            width: '10%',
+        },
+        {
+            field: 'factors',
+            header: 'فاکتور ها',
+            width: '10%',
+            body: (rowData) => {
+                return (
+                    <Button
+                        icon="pi pi-receipt"
+                        className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                        onClick={() => factorHandler(rowData)}
+                        text
+                    />
+                );
+            },
+        },
+    ];
+
+    const removeCustomer = (event, customer) => {
+        event.stopPropagation();
+        console.log(customer);
+        const removeCustomer = {
+            transaction_id: customer?.transaction_id,
+        };
+        setSelectedRemoveCustomer(removeCustomer);
+        setRemoveModalVisible(true);
+    };
+    const confirmRemove = async () => {
+        try {
+            await deleteTransaction(selectedRemoveCustomer.transaction_id);
+            setRemoveModalVisible(false);
+            setFactorModal(false);
+        } catch (error) {
+            toast(error.message);
+        }
+    };
+
+    const changeStatus = async (e, customer, status) => {
+        try {
+            await editTransactionDetail(customer.transaction_id, { status });
+            setFactorModal(false);
+        } catch (error) {
+            toast.error('خطایی رخ داده است');
+        }
+    };
+
+    const transactionColumnFields = [
+        {
+            field: 'transaction_id',
+            header: 'شماره فاکتور',
+            width: '20%',
+        },
+        {
+            field: 'jalali_date',
+            header: 'تاریخ',
+            width: '20%',
+        },
+        {
+            field: 'details',
+            header: 'جزئیات',
+            width: '20%',
+        },
+        {
+            field: 'download',
+            header: 'دانلود',
+            width: '20%',
+        },
+        {
+            field: 'status',
+            header: 'وضعیت',
+            width: '10%',
+            body: (customer) => {
+                return (
+                    <div className="flex">
+                        <Button
+                            icon="pi pi-check"
+                            text
+                            onClick={(event) => {
+                                changeStatus(event, customer, 'approved');
+                            }}
+                            disabled={
+                                customer.status !== 'waiting_for_approval'
+                            }
+                            className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                        />
+                        <Button
+                            icon="pi pi-times"
+                            text
+                            onClick={(event) => {
+                                changeStatus(event, customer, 'rejected');
+                            }}
+                            disabled={
+                                customer.status !== 'waiting_for_approval'
+                            }
+                            className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                        />
+                    </div>
+                );
+            },
+        },
+    ];
+
     const headerStyle = {
         background: theme === 'dark' ? '#262626' : '#fff',
         color: theme === 'dark' ? '#fff' : '#000',
@@ -240,6 +405,12 @@ const MainContent: SFC = () => {
             ...prev,
             last_national_id: detail.national_id,
         }));
+    };
+
+    const factorHandler = async (detail) => {
+        const res = await getTransactionsList({ marketer: detail.national_id });
+        setTransactions(res);
+        setFactorModal(true);
     };
 
     const validateEmail = (email) => {
@@ -291,6 +462,27 @@ const MainContent: SFC = () => {
             if (error.response.data.phone) {
                 toast.error('کاربر با این شماره وجود دارد');
             }
+        }
+    };
+
+    const handleDownloadClick = async (detail) => {
+        try {
+            const response = await exportTransactionDetail({
+                transaction_id: detail.transaction_id,
+            });
+            const blob = response;
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.setAttribute(
+                'download',
+                `factor-${detail.transaction_id}.xlsx`
+            );
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.success('با موفقیت ذخیره شد.');
+        } catch (error: any) {
+            toast(error.message || 'خطایی رخ داد.');
         }
     };
 
@@ -355,6 +547,38 @@ const MainContent: SFC = () => {
         setDetail(response);
         setSelectedUser(detail);
         setDetailModal(true);
+    };
+
+    const handleFactorDetailsClick = async (detail) => {
+        const response = await transactionDetail(detail.transaction_id);
+        response.full_name =
+            response.customer.first_name ||
+            '' + response.customer.last_name ||
+            '';
+        setDetail([response]);
+        setSelectedFactor(detail);
+        setFactorDetailModal(true);
+    };
+
+    const downloadRow = async () => {
+        try {
+            const response = await exportTransactionDetail({
+                transaction_id: selectedFactor.transaction_id,
+            });
+            const blob = response;
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.setAttribute(
+                'download',
+                `factor-${selectedFactor.transaction_id}.xlsx`
+            );
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.success('با موفقیت ذخیره شد.');
+        } catch (error: any) {
+            toast(error.message || 'خطایی رخ داد.');
+        }
     };
 
     const exportData = async () => {
@@ -803,14 +1027,20 @@ const MainContent: SFC = () => {
                         resizable={false}
                     >
                         <div className="flex justify-between items-center mb-5">
-                            <AddCustomer
-                                idCustomer={selectedUser.national_id}
-                            />
+                            <div className="flex items-center gap-5">
+                                <AddCustomer
+                                    idCustomer={selectedUser.national_id}
+                                />
+                                <AdvanceSearch
+                                    customerId={selectedUser.national_id}
+                                    customerName={selectedUser.full_name}
+                                />
+                            </div>
                             <Button
                                 onClick={exportData}
-                                icon="pi pi-download"
+                                icon="pi pi-download text-2xl"
                                 text
-                                className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                                className={` rounded-lg text-2xl px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
                             />
                         </div>
                         <DataTable
@@ -1033,6 +1263,79 @@ const MainContent: SFC = () => {
                         </div>
                     </S.DialogStyle>
                 </div>
+                <S.DialogStyle
+                    header="فاکتور ها"
+                    visible={factorModal}
+                    style={factorDialogStyle}
+                    headerStyle={headerStyle}
+                    contentStyle={contentStyle}
+                    onHide={() => setFactorModal(false)}
+                    draggable={false}
+                    resizable={false}
+                    dismissableMask
+                >
+                    <div>
+                        <DataTable
+                            data={transactionsList}
+                            columnFields={transactionColumnFields}
+                            totalRecords={transactionsList?.length}
+                            pagination={true}
+                            onDetailsClick={handleFactorDetailsClick}
+                            onDownloadClick={handleDownloadClick}
+                            scrollHeight={tableHeight + 'px'}
+                        />
+                    </div>
+                </S.DialogStyle>
+                <S.DialogStyle
+                    header={selectedFactor?.transaction_id}
+                    visible={factorDetailModal}
+                    style={detailDialogStyle}
+                    headerStyle={headerStyle}
+                    contentStyle={contentStyle}
+                    onHide={() => setFactorDetailModal(false)}
+                    dismissableMask
+                    draggable={false}
+                    resizable={false}
+                >
+                    <div className="flex justify-end mb-5">
+                        <Button
+                            onClick={downloadRow}
+                            icon="pi pi-download"
+                            text
+                            className={` rounded-lg px-5 aspect-square ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                        />
+                    </div>
+                    <DataTable
+                        data={detail}
+                        columnFields={factorDetailColumnFields}
+                    />
+                </S.DialogStyle>
+                <S.DialogStyle
+                    header={'حذف فاکتور'}
+                    visible={removeModalVisible}
+                    onHide={() => setRemoveModalVisible(false)}
+                    style={{ width: '40vw', minWidth: '300px' }}
+                >
+                    <div>
+                        <S.RemoveMessage>
+                            آیا از حذف فاکتور "
+                            {selectedRemoveCustomer?.transaction_id}" مطمئن
+                            هستید؟
+                        </S.RemoveMessage>
+                        <S.FooterContainer>
+                            <S.FooterButton
+                                label="بستن"
+                                onClick={() => setRemoveModalVisible(false)}
+                                autoFocus
+                            ></S.FooterButton>
+                            <S.FooterButton
+                                label="حذف"
+                                onClick={() => confirmRemove()}
+                                autoFocus
+                            ></S.FooterButton>
+                        </S.FooterContainer>
+                    </div>
+                </S.DialogStyle>
                 <TabView
                     activeIndex={changeActiveIndex}
                     onTabChange={(e) => setChangeActiveIndex(e.index)}

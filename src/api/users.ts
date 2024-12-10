@@ -137,3 +137,23 @@ export const exportUserDetail = async (dispatch: AppDispatch, id, params) => {
         throw error;
     }
 };
+
+export const exportForDate = async (dispatch: AppDispatch, id, params) => {
+    try {
+        const url = `${BASE_URL}/marketers/${id}/export_for_date/`;
+        const response = await axios.get(url, {
+            params,
+            headers: {
+                Authorization: getAccess(),
+            },
+            responseType: 'blob',
+        });
+        return response.data;
+    } catch (error) {
+        if (error.response.status === 401) {
+            dispatch(logout());
+        }
+        console.error(error);
+        throw error;
+    }
+};

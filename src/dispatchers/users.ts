@@ -15,8 +15,9 @@ export const fetchUsersList = () => async (dispatch: AppDispatch) => {
         const data: Users[] = await api.getUsersList(dispatch);
         data?.forEach((e) => {
             e.fee_rate =
-                parseFloat(e?.commissions?.marketing_percent) *
-                    parseFloat(e?.commissions?.wage_percent) || 0;
+                (parseFloat(e?.commissions?.marketing_percent) *
+                    parseFloat(e?.commissions?.wage_percent)) /
+                    100 || 0;
             e.full_name = `${e?.first_name} ${e?.last_name}`;
         });
 

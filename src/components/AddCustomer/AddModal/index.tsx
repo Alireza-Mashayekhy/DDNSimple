@@ -30,16 +30,13 @@ const AddModal: SFC<AddCustomerModalProps> = ({
     const [nationalCode, setNationalCode] = useState(null);
     const [stickCode, setStickCode] = useState(null);
     const [searchedCustomer, setSearchedCustomer] = useState(false);
+    const dispatch = useDispatch<AppDispatch>();
 
     useEffect(() => {
-        getTickers()
-            .then((res) => {
-                const data = res?.data.map((e) => e.ticker);
-                setTickers(data);
-            })
-            .catch((error) => {
-                toast(error.message);
-            });
+        getTickers(dispatch).then((res) => {
+            const data = res?.data.map((e) => e.ticker);
+            setTickers(data);
+        });
     }, []);
 
     const searchTicker = (event) => {

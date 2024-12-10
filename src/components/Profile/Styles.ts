@@ -18,11 +18,13 @@ export const Image = styled.img`
     box-shadow: 0px 0px 12px 0px ${({ theme }) => theme.border};
     position: relative;
     background: ${({ theme }) => theme.secondary};
+    cursor: pointer;
 `;
 export const Name = styled.div`
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 15px;
+    cursor: pointer;
 `;
 export const Date = styled.div`
     font-size: 16px;
@@ -35,6 +37,7 @@ export const DefaultImage = styled.img`
     width: 100%;
     height: 100%;
     position: relative;
+    cursor: pointer;
 `;
 
 export const DefaultImageContainer = styled.div`

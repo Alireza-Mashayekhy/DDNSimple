@@ -14,18 +14,21 @@ import * as S from './Styles';
 import {
     exportShareholder,
     getExportSummery,
+    getFundTypes,
     getShareholderDetail,
     getShareholders,
     getSummery,
+    getSummeryChildren,
 } from '@/api/investment';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { getTheme } from '@/redux/selectors';
-import { getInvestment } from '@/selectors/state';
+import { getInvestment, getStockData } from '@/selectors/state';
 import { setSummery, setTree } from '@/redux/store/investmentData';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/types';
 import InvestmentBack from '@/assets/investmentBack.jpg';
+import { object } from 'yup';
 
 interface FundSummary {
     id: number;
@@ -91,7 +94,7 @@ const Investment = () => {
     const treeDataSelector = useSelector(getInvestment)?.tree;
     const summeryDataSelector = useSelector(getInvestment)?.summery;
 
-    const [treeData, setTreeData] = useState<TreeNode[]>(treeDataSelector);
+    const [treeData, setTreeData] = useState<TreeNode[]>([]);
     const [selectedDate, setSelectedDate] = useState<string>(getDefaultDate());
     const [expandedKeys, setExpandedKeys] = useState<{
         [key: string]: boolean;
@@ -104,8 +107,7 @@ const Investment = () => {
         useState<ShareholderDetails | null>(null);
     const [selectedInvestorName, setSelectedInvestorName] =
         useState<string>('');
-    const [summaryData, setSummaryData] =
-        useState<FundSummary[]>(summeryDataSelector);
+    const [summaryData, setSummaryData] = useState([]);
     const [totalRecords, setTotalRecords] = useState<number>(0);
     const [chartData, setChartData] = useState<{
         labels: string[];
@@ -118,7 +120,6 @@ const Investment = () => {
     const [summaryDetailId, setSummaryDetailId] = useState<any>(null);
     const [summaryDetail, setSummaryDetail] = useState(null);
     const [summaryFundName, setSummaryFundName] = useState<any>(null);
-    const [shareholderData, setShareholderData] = useState<any>(null);
     const [sortedTreeData, setSortedTreeData] = useState<TreeNode[]>([]);
     const [sortField, setSortField] = useState<any>(null);
     const [sortOrder, setSortOrder] = useState<any>(null);
@@ -135,7 +136,34 @@ const Investment = () => {
         rows: 10,
         page: 1,
     });
+    const [fund, setFund] = useState({
+        name: 'همه',
+        code: '',
+    });
+    const [searchedParams, setSearchedParams] = useState({
+        share_holder_histories__date: '',
+        search: '',
+        fund_type: '',
+    });
 
+    const [tickerData, setTickerData] = useState([]);
+    const [fundsList, setFundsList] = useState([]);
+
+    const getFundTypesList = async () => {
+        const res = await getFundTypes();
+        res.forEach((element) => {
+            element.code = element.id;
+        });
+        res.push({ name: 'همه', code: '' });
+        const result = res.map(({ id, ...rest }) => rest);
+        setFundsList(result);
+        const res2 = await getShareholders({});
+        setSummaryData(res2);
+    };
+
+    useEffect(() => {
+        getFundTypesList();
+    }, []);
     const dispatch = useDispatch<AppDispatch>();
 
     const theme = useSelector(getTheme);
@@ -156,7 +184,7 @@ const Investment = () => {
 
     const suggestLastName = (event: any) => {
         const query = event.query.toLowerCase();
-        const filteredSuggestions = shareholderData
+        const filteredSuggestions = summaryData
             .map((item: any) => item.name)
             .filter((name: any) => name.toLowerCase().includes(query));
         setSuggestions({ ...suggestions, lastName: filteredSuggestions });
@@ -174,69 +202,65 @@ const Investment = () => {
     useEffect(() => {
         if (!treeData?.length || !summaryData?.length) {
             loadData();
-        } else if (!shareholderData?.length) {
-            getShareholdersData();
         }
     }, []);
-
-    const getShareholdersData = async () => {
-        const shareholderParams = {
-            date: selectedDate,
-        };
-        try {
-            const shareholderResponse =
-                await getShareholders(shareholderParams);
-            const shareholderData = shareholderResponse as Shareholder[];
-            setShareholderData(shareholderData);
-        } catch (error) {}
-    };
 
     const loadData = async () => {
         setLoading(true);
         const summaryParams = {
             share_holder_histories__date: selectedDate,
             search: autoCompleteValues.lastName.toLowerCase(),
+            fund_type: fund.code,
         };
-        const shareholderParams = {
-            date: selectedDate,
-        };
+        setSearchedParams(summaryParams);
         try {
             const summaryResponse = await getSummery(summaryParams);
             let summaryData = summaryResponse as FundSummary[];
-            const shareholderResponse =
-                await getShareholders(shareholderParams);
 
-            const shareholderData = shareholderResponse as Shareholder[];
-            setShareholderData(shareholderData);
             setSummaryData(summaryData);
             dispatch(setSummery(summaryData));
 
             const totalCount = summaryResponse;
             setTotalRecords(totalCount);
+            setExpandedKeys({});
             const treeNodes: TreeNode[] = summaryData.map((summary) => ({
                 key: `summary-${summary.id}`,
                 data: {
                     ...summary,
                     type: 'summary',
                 },
-                children:
-                    shareholderData
-                        .find((shareholder) => shareholder.id === summary.id)
-                        ?.share_holder_histories.map((history) => ({
-                            key: `history-${summary.id}-${history.fund_id}`,
-                            data: {
-                                ...history,
-                                type: 'history',
-                            },
-                        })) || [],
+                children: [
+                    {
+                        data: {
+                            date: '',
+                            fund: '',
+                            fund_id: '',
+                            pct_of_shares: 0,
+                            share_count: 0,
+                            type: '',
+                            value: 0,
+                            num_funds: null,
+                        },
+                        key: '',
+                    },
+                ],
             }));
             setTreeData(treeNodes);
-            dispatch(setTree(treeNodes));
         } catch (error) {
             console.error('Error fetching data:', error);
             toast.error('خطا در برقراری ارتباط');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fundChanged = async (e) => {
+        if (e.value.code) {
+            const res = await getShareholders({ fund_type: e.value.code });
+            setSummaryData(res);
+        } else {
+            const res = await getShareholders({});
+            setSummaryData(res);
         }
     };
 
@@ -272,32 +296,37 @@ const Investment = () => {
     }, [treeData, sortField, sortOrder, sortData]);
 
     const handleMainPageDownload = async () => {
-        setLoadingDownload(true);
-        const summaryParams = {
-            share_holder_histories__date: selectedDate,
-            search: autoCompleteValues.lastName.toLowerCase(),
-        };
-        try {
-            const response = await getExportSummery(summaryParams);
-            const url = window.URL.createObjectURL(
-                new Blob([response], {
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                })
-            );
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute(
-                'download',
-                `گزارش جامع سرمایه‌گذاران درصدی صندوق‌ها ${selectedDate}.xlsx`
-            );
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            setLoadingDownload(false);
-        } catch (error) {
-            console.error('Error downloading report:', error);
-            toast.error('خطا در دریافت فایل . لطفا دوباره تلاش کنید');
-            setLoadingDownload(false);
+        if (fund.code) {
+            setLoadingDownload(true);
+            const summaryParams = {
+                share_holder_histories__date: selectedDate,
+                search: autoCompleteValues.lastName.toLowerCase(),
+                fund_type: fund.code,
+            };
+            try {
+                const response = await getExportSummery(summaryParams);
+                const url = window.URL.createObjectURL(
+                    new Blob([response], {
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    })
+                );
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute(
+                    'download',
+                    `گزارش جامع سرمایه‌گذاران درصدی صندوق‌ها ${selectedDate}.xlsx`
+                );
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setLoadingDownload(false);
+            } catch (error) {
+                console.error('Error downloading report:', error);
+                toast.error('خطا در دریافت فایل . لطفا دوباره تلاش کنید');
+                setLoadingDownload(false);
+            }
+        } else {
+            toast.error('لطفا برای دانلود صندوق را انتخاب کنید');
         }
     };
 
@@ -358,25 +387,6 @@ const Investment = () => {
         return null;
     };
 
-    const updateTreeData = (
-        data: TreeNode[],
-        key: string,
-        children: TreeNode[]
-    ): TreeNode[] => {
-        return data.map((node) => {
-            if (node.key === key) {
-                return { ...node, children };
-            }
-            if (node.children) {
-                return {
-                    ...node,
-                    children: updateTreeData(node.children, key, children),
-                };
-            }
-            return node;
-        });
-    };
-
     const handleDateChange = (value: any) => {
         setSelectedDate(convertToPersianDate(value.value));
     };
@@ -398,10 +408,9 @@ const Investment = () => {
             const investorName = summary ? summary.name : 'Unknown Investor';
 
             try {
-                const response = await getShareholderDetail(
-                    summary?.id,
-                    node.data.fund
-                );
+                const response = await getShareholderDetail(summary?.id, {
+                    fund: node.data.fund,
+                });
                 const data: ShareholderDetails = {
                     ...response,
                     investor_name: investorName,
@@ -565,6 +574,56 @@ const Investment = () => {
         }
     };
 
+    const setSummeryChildren = async (e) => {
+        const newlyExpandedKey = Object.keys(e.value).find(
+            (key) => !expandedKeys?.[key]
+        );
+
+        if (!newlyExpandedKey) {
+            setExpandedKeys(e.value);
+            return;
+        }
+        setExpandedKeys(e.value);
+        const expandedKey = Object.keys(e.value)[
+            Object.keys(e.value).length - 1
+        ];
+        const expandedData = treeData.filter(
+            (node) => node.key === expandedKey
+        );
+
+        if (
+            expandedData[0]?.children?.length === 1 &&
+            expandedData[0]?.children[0].key === ''
+        ) {
+            const params: { [key: string]: string } = { date: selectedDate };
+            if (searchedParams.fund_type) {
+                params.fund_type = searchedParams.fund_type;
+            }
+            const res = await getSummeryChildren(
+                params,
+                expandedData[0].data.id
+            );
+
+            const updatedTreeData = treeData.map((node) => {
+                if (node.key === expandedKey) {
+                    return {
+                        ...node,
+                        children: res.share_holder_histories.map((history) => ({
+                            key: `history-${node.data.id}-${history.fund_id}`,
+                            data: {
+                                ...history,
+                                type: 'history',
+                            },
+                        })),
+                    };
+                }
+                return node;
+            });
+
+            setTreeData(updatedTreeData);
+        }
+    };
+
     return (
         <PrimeReactProvider>
             <div className="relative">
@@ -586,7 +645,22 @@ const Investment = () => {
                         {dialogContent()}
                     </S.DialogStyle>
                     <div className="flex flex-col gap-5 items-center py-5 justify-center">
-                        <div className="data-filter-inputs items-center">
+                        <div className="data-filter-inputs items-center gap-4">
+                            <S.DropDownStyle
+                                options={fundsList}
+                                value={fund || ''}
+                                onChange={(e) => {
+                                    setFund(e.value);
+                                    fundChanged(e);
+                                }}
+                                optionLabel="name"
+                                panelStyle={{
+                                    background:
+                                        theme === 'dark' ? 'black' : 'white',
+                                    color: 'red',
+                                }}
+                                placeholder="نام صندوق"
+                            />
                             <S.Input
                                 value={autoCompleteValues.lastName || ''}
                                 suggestions={suggestions.lastName}
@@ -599,21 +673,21 @@ const Investment = () => {
                                 placeholder="نام سرمایه‌گذار"
                                 minLength={3}
                             />
-                            <label htmlFor="" className=" mr-4 ml-2">
-                                تاریخ
-                            </label>
+                            <div className="flex items-center gap-2">
+                                <label>تاریخ</label>
 
-                            <DatePicker
-                                round="x4"
-                                position="center"
-                                className="z-10"
-                                onChange={(e) => handleDateChange(e)}
-                                inputClass={
-                                    theme === 'dark'
-                                        ? 'bg-[#000000] !text-[#ffffff] !mx-0 h-[35px] w-[190px] text-sm'
-                                        : 'bg-[#FFFFFF] !text-[#000000] !mx-0 h-[35px] w-[190px] text-sm'
-                                }
-                            />
+                                <DatePicker
+                                    round="x4"
+                                    position="center"
+                                    className="z-10"
+                                    onChange={(e) => handleDateChange(e)}
+                                    inputClass={
+                                        theme === 'dark'
+                                            ? 'bg-[#000000] !text-[#ffffff] !mx-0 h-[35px] w-[190px] text-sm'
+                                            : 'bg-[#FFFFFF] !text-[#000000] !mx-0 h-[35px] w-[190px] text-sm'
+                                    }
+                                />
+                            </div>
                         </div>
                         <div className="flex gap-5">
                             <Button
@@ -664,7 +738,7 @@ const Investment = () => {
                         <S.TreeTableStyle
                             value={treeData}
                             expandedKeys={expandedKeys}
-                            onToggle={(e) => setExpandedKeys(e.value)}
+                            onToggle={(e) => setSummeryChildren(e)}
                             tableStyle={{ minWidth: '50rem' }}
                             loading={loading}
                             className="rtl-treetable"

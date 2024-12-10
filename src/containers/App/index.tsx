@@ -15,16 +15,20 @@ import 'primereact/resources/themes/mdc-dark-indigo/theme.css';
 import { useIsAuthenticated } from '@/hooks';
 import Unauthenticated from '@/layouts/unauthenticated';
 import { getUserData } from '@/utils/authentication';
+import AuthenticatedUser from '@/layouts/authenticatedUser';
 
 const App = () => {
     const isAuthenticated = useIsAuthenticated();
     const theme = useSelector(getTheme);
     const role = getUserData()?.role;
-    console.log(isAuthenticated, role);
 
     const renderLayout = () => {
         if (isAuthenticated) {
-            return <Authenticated />;
+            if (role === 'MANAGER') {
+                return <Authenticated />;
+            } else {
+                return <AuthenticatedUser />;
+            }
         }
         return <Unauthenticated />;
     };

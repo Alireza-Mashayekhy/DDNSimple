@@ -7,6 +7,8 @@ import { getTheme } from '@/redux/selectors';
 import { useEffect, useState } from 'react';
 import LineChart from '@/components/chart';
 import { getUserData } from '@/utils/authentication';
+import DataTable from '@/components/DataTable';
+import { Button } from 'primereact/button';
 
 interface DdnHistoryEntry {
     ticker: string;
@@ -59,6 +61,7 @@ const InfoModal: SFC<CustomerInfoModalProps> = ({
     const theme = useSelector(getTheme);
 
     useEffect(() => {
+        setDdnHistoryChart({ labels: [], datasets: [] });
         if (
             customer?.ddn_history_chart &&
             customer?.ddn_history_chart.length > 0
@@ -88,6 +91,7 @@ const InfoModal: SFC<CustomerInfoModalProps> = ({
             });
         }
     }, [customer]);
+
     const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff6384']; // Add more colors if needed
 
     const footerContent = (
@@ -137,83 +141,84 @@ const InfoModal: SFC<CustomerInfoModalProps> = ({
         return isNegative ? `(${formattedNumber})` : formattedNumber;
     }
 
+    const customerColumnFields = [
+        {
+            field: 'ticker',
+            header: 'نماد',
+            width: '10%',
+        },
+        {
+            field: 'date',
+            header: 'تاریخ',
+            width: '10%',
+        },
+        {
+            field: 'shares',
+            header: 'تعداد سهام کل',
+            width: '10%',
+        },
+        {
+            field: 'value',
+            header: 'ارزش کل (ریال)',
+            width: '10%',
+        },
+        {
+            field: 'wage',
+            header: 'درصد کارمزد بازاریاب',
+            width: '10%',
+        },
+        {
+            field: 'commission',
+            header: 'کارمزد بازاریاب',
+            width: '10%',
+            body: (rowData: DdnHistoryEntry) =>
+                numberFormatter(Number(rowData.shares.toFixed(2))),
+        },
+    ];
+
+    const headerContent = <div className="text-center">جزییات سهامدار</div>;
+
     return (
         <S.Container
-            header={'جزییات سهامدار'}
+            header={headerContent}
             footer={footerContent}
             visible={visible}
             onHide={() => setVisibleProp(false)}
             style={{ width: '60vw', minWidth: '300px' }}
         >
-            {/* Header section */}
-            <S.TitleContainer>
-                <S.Title>مشخصات:</S.Title>
-                <S.DLButton onClick={exportData}>دانلود گزارش</S.DLButton>
-            </S.TitleContainer>
-
-            {/* Customer info display */}
-            <S.InfoContainer>
-                <S.Info>
-                    <S.InfoHeader>نام و نام خانوادگی:</S.InfoHeader>
-                    {customer?.first_name} {customer?.last_name}
-                </S.Info>
-                <S.Info>
-                    <S.InfoHeader>کد ملی:</S.InfoHeader>
-                    {customer?.national_id}
-                </S.Info>
-                <S.Info>
-                    <S.InfoHeader>شماره سهامداری:</S.InfoHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="w-[calc(33.33%-6px)] my-1 border-b border-b-slate-500 pb-2 text-center">
+                    <span className="font-bold">کد سهامداری :</span>{' '}
                     {customer?.stock_id}
-                </S.Info>
-                <S.Info>
-                    <S.InfoHeader>تاریخ تولد:</S.InfoHeader>
-                    {customer?.brith_date}
-                </S.Info>
-                <S.Info>
-                    <S.InfoHeader>جنسیت:</S.InfoHeader>
-                    {customer?.gender === 'M' ? 'مرد' : 'زن'}
-                </S.Info>
-                <S.Info>
-                    <S.InfoHeader>نوع سرمایه‌گذار:</S.InfoHeader>
+                </p>
+                <p className="w-[calc(33.33%-6px)] my-1 border-b border-b-slate-500 pb-2 text-center">
+                    <span className="font-bold">کد ملی :</span>{' '}
+                    {customer?.national_id}
+                </p>
+                <p className="w-[calc(33.33%-6px)] my-1 border-b border-b-slate-500 pb-2 text-center">
+                    <span className="font-bold">نوع سرمایه‌گذار: </span>{' '}
                     {customer?.inv_type === 'I' ? 'حقیقی' : 'حقوقی'}
-                </S.Info>
-            </S.InfoContainer>
+                </p>
+            </div>
+
+            <div className="flex justify-end">
+                <Button
+                    icon="pi pi-download text-2xl"
+                    onClick={exportData}
+                    className={` rounded-lg aspect-square bg-inherit ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                />
+            </div>
 
             {/* Investment table */}
-            <S.Title>جدول سرمایه‌گذاری</S.Title>
-            <S.TableContainer
-                value={customer?.ddn_history}
-                tableStyle={{ minWidth: '30rem' }}
-                emptyMessage={'داده ای برای نمایش وجود ندارد'}
-            >
-                <S.TableColumn
-                    align={'center'}
-                    field="ticker"
-                    header="نماد"
-                ></S.TableColumn>
-                <S.TableColumn
-                    align={'center'}
-                    field="date"
-                    header="تاریخ گزارش"
-                ></S.TableColumn>
-                <S.TableColumn
-                    align={'center'}
-                    field="shares"
-                    header="سهام کل"
-                    body={(rowData: DdnHistoryEntry) =>
-                        numberFormatter(Number(rowData.shares.toFixed(2)))
-                    }
-                ></S.TableColumn>
-                <S.TableColumn
-                    align={'center'}
-                    field="wage"
-                    header="کارمزد بازاریاب"
-                    body={(rowData: DdnHistoryEntry) => Number(rowData.wage)}
-                ></S.TableColumn>
-            </S.TableContainer>
-
-            {/* Chart section */}
-            <S.Title>نمودار سرمایه‌گذاری</S.Title>
+            <div>
+                <DataTable
+                    data={customer?.ddn_history}
+                    totalRecords={customer?.ddn_history?.length}
+                    pagination
+                    columnFields={customerColumnFields}
+                    scrollHeight={'400px'}
+                />
+            </div>
             <div className="flex justify-center mt-10">
                 <LineChart
                     datasets={ddnHistoryChart.datasets}

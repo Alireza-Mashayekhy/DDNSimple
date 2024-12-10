@@ -21,8 +21,9 @@ import loanLight from '@/assets/loanLight.png';
 import calendarDark from '@/assets/calendarDark.png';
 import calendarLight from '@/assets/calendarLight.png';
 import background from '@/assets/customersBack.jpg';
-import { transactionsCustomers } from '@/api/customers';
 import { getUserData } from '@/utils/authentication';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/types';
 
 export default function Customers() {
     const [infoModalVisible, setInfoModalVisible] = useState(false);
@@ -37,9 +38,10 @@ export default function Customers() {
     const [selectedCustomers, setSelectedCustomers] = useState([]);
 
     const theme = useSelector(getTheme);
+    const dispatch = useDispatch<AppDispatch>();
 
     const getCustomersHandler = () => {
-        getCustomers()
+        getCustomers(dispatch)
             .then((res) => {
                 setCustomers(res?.data);
                 setFilteredCustomers(res?.data);
@@ -158,21 +160,6 @@ export default function Customers() {
         });
     };
 
-    const transactions = async () => {
-        if (selectedCustomers.length) {
-            const data = selectedCustomers.map((e) => {
-                return {
-                    ticker: e.ticker,
-                    national_id: e.national_id,
-                };
-            });
-            await transactionsCustomers({ customers: data });
-            toast.success('تسویه با موفقیت انجام شد');
-        } else {
-            toast.error('حداقل یک مشتری را انتخاب کنید.');
-        }
-    };
-
     return (
         <div className="relative p-5 pt-12">
             <S.Background $url={background} />
@@ -185,9 +172,6 @@ export default function Customers() {
                     <AddCustomer />
                     <S.DownloadButton onClick={exportData}>
                         دانلود گزارش
-                    </S.DownloadButton>
-                    <S.DownloadButton onClick={transactions}>
-                        تسویه
                     </S.DownloadButton>
                 </S.HeaderButtons>
                 <S.FloatLabelSection>
@@ -251,20 +235,7 @@ export default function Customers() {
                                 >
                                     <S.ClearIcon path={mdiTrashCan} size={1} />
                                 </S.Clear>
-                                {customer.status_Withdrawal_money && (
-                                    <S.SelectInput
-                                        type="checkbox"
-                                        position={'absolute'}
-                                        top={'15px'}
-                                        left={'15px'}
-                                        onChange={(e) =>
-                                            checkSelectedCustomer(
-                                                e.target.checked,
-                                                customer
-                                            )
-                                        }
-                                    />
-                                )}
+
                                 <S.ItemImage
                                     size="xlarge"
                                     shape={'circle'}

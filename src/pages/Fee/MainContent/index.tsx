@@ -55,6 +55,26 @@ const wageColumnFields = [
         width: '10%',
     },
     {
+        field: 'tadbir_manager_commission',
+        header: 'کارمزد مدیر تدبیر',
+        width: '10%',
+        body: (data) => {
+            return numberFormatter(
+                Number(data.tadbir_manager_commission.toFixed(2))
+            );
+        },
+    },
+    {
+        field: 'tadbir_marketer_commission',
+        header: 'کارمزد بازاریاب تدبیر',
+        width: '10%',
+        body: (data) => {
+            return numberFormatter(
+                Number(data.tadbir_marketer_commission.toFixed(2))
+            );
+        },
+    },
+    {
         field: 'marketer_commission',
         header: 'کارمزد بازاریاب (ریال)',
         width: '10%',
@@ -99,6 +119,26 @@ const DetailColumnFields = [
         width: '10%',
         body: (data) => {
             return numberFormatter(Number(data.marketer_commission.toFixed(2)));
+        },
+    },
+    {
+        field: 'tadbir_manager_commission',
+        header: 'کارمزد مدیر تدبیر',
+        width: '10%',
+        body: (data) => {
+            return numberFormatter(
+                Number(data.tadbir_manager_commission.toFixed(2))
+            );
+        },
+    },
+    {
+        field: 'tadbir_marketer_commission',
+        header: 'کارمزد بازاریاب تدبیر',
+        width: '10%',
+        body: (data) => {
+            return numberFormatter(
+                Number(data.tadbir_marketer_commission.toFixed(2))
+            );
         },
     },
     {
