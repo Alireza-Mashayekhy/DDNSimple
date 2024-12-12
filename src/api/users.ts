@@ -82,9 +82,8 @@ export const exportUser = async (dispatch: AppDispatch, id) => {
 
 export const deleteUser = async (dispatch: AppDispatch, id, params) => {
     try {
-        const url = `${BASE_URL}/marketers/${id}/delete_customer_detail/`;
-        const response = await axios.delete(url, {
-            params,
+        const url = `${BASE_URL}/marketers/${id}/delete_customers/`;
+        const response = await axios.post(url, params, {
             headers: {
                 Authorization: getAccess(),
             },

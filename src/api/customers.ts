@@ -30,6 +30,17 @@ export const searchCustomers = async (data) => {
     }
 };
 
+export const searchAdminCustomer = async (data) => {
+    try {
+        const url = `${BASE_URL}/ddn/customers/search/`;
+        const response = await axios.post(url, data, authorizationHeaders());
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
 export const transactionsCustomers = async (data) => {
     try {
         const url = `${BASE_URL}/v1/transactions/`;

@@ -6,6 +6,7 @@ import { FloatLabel } from 'primereact/floatlabel';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import styled from 'styled-components';
+import UIcon from '@mdi/react';
 
 export const Container = styled.div`
     padding: 20px;
@@ -117,3 +118,17 @@ export const FooterButton = styled(Button)`
     width: fit-content;
     height: fit-content;
 `;
+
+export const DeleteButton = styled(Button)`
+    font-size: 14px;
+    border: 1px solid ${({ theme }) => theme.textColor};
+    padding: 8px 15px;
+    background: transparent;
+    border-radius: 8px;
+    color: ${({ theme }) => theme.textColor};
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+`;
+export const AddIcon = styled(UIcon)``;

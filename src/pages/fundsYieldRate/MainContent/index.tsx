@@ -88,6 +88,7 @@ const MainContent: SFC = () => {
                     </div>
                 );
             },
+            sortable: true,
         },
         {
             field: 'six_months',

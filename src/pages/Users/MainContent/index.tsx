@@ -24,7 +24,7 @@ import LineChart from '@/components/chart';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputText } from 'primereact/inputtext';
 import usersBack from '@/assets/usersBack.png';
-import AddCustomer from '@/components/AddCustomer';
+import AdminAddCustomer from '@/components/AdminAddCustomer';
 import { TabPanel, TabView } from 'primereact/tabview';
 import {
     deleteTransaction,
@@ -34,6 +34,7 @@ import {
     transactionDetail,
 } from '@/api/customers';
 import AdvanceSearch from '../AdvanceSearch';
+import { mdiTrashCan } from '@mdi/js';
 
 const dialogStyle = {
     width: '30vw',
@@ -56,46 +57,6 @@ function numberFormatter(number: number) {
     const formattedNumber = absNumberStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return isNegative ? `- ${formattedNumber}` : formattedNumber;
 }
-const DetailColumnFields = [
-    {
-        field: 'delete',
-        header: '',
-        width: '10%',
-    },
-    {
-        field: 'full_name',
-        header: 'نام کاربر',
-        width: '10%',
-        align: 'right',
-    },
-    {
-        field: 'ticker',
-        header: 'نماد',
-        width: '10%',
-    },
-    {
-        field: 'total_commission',
-        header: 'کارمزد',
-        width: '10%',
-        body: (data) => {
-            return (
-                <div style={{ direction: 'ltr' }}>
-                    {numberFormatter(Number(data.total_commission))}
-                </div>
-            );
-        },
-    },
-    {
-        field: 'count_days',
-        header: 'روز شمار',
-        width: '10%',
-    },
-    {
-        field: 'details',
-        header: 'جزئیات',
-        width: '10%',
-    },
-];
 
 const customerDetailColumnFields = [
     {
@@ -196,6 +157,7 @@ const MainContent: SFC = () => {
     const [changeActiveIndex, setChangeActiveIndex] = useState(0);
     const [selectedRemoveCustomer, setSelectedRemoveCustomer] = useState(null);
     const [removeModalVisible, setRemoveModalVisible] = useState(false);
+    const [selectedData, setSelectedData] = useState([]);
 
     const [tableHeight, setTableHeight] = useState(window.innerHeight - 400);
     useEffect(() => {
@@ -205,6 +167,67 @@ const MainContent: SFC = () => {
     }, []);
 
     const theme = useSelector(getTheme);
+
+    const checkSelectedData = async (checked, data) => {
+        setSelectedData((prevSelectedData) => {
+            if (checked) {
+                return [...prevSelectedData, data];
+            } else {
+                return prevSelectedData.filter((c) => c !== data);
+            }
+        });
+    };
+    const DetailColumnFields = [
+        {
+            field: 'deleteCustomers',
+            header: 'حذف',
+            width: '10%',
+            body: (data) => {
+                return (
+                    <input
+                        type="checkbox"
+                        className="cursor-pointer w-5 h-5 m-0"
+                        onChange={(e) =>
+                            checkSelectedData(e.target.checked, data)
+                        }
+                    />
+                );
+            },
+        },
+        {
+            field: 'full_name',
+            header: 'نام کاربر',
+            width: '10%',
+            align: 'right',
+        },
+        {
+            field: 'ticker',
+            header: 'نماد',
+            width: '10%',
+        },
+        {
+            field: 'total_commission',
+            header: 'کارمزد',
+            width: '10%',
+            body: (data) => {
+                return (
+                    <div style={{ direction: 'ltr' }}>
+                        {numberFormatter(Number(data.total_commission))}
+                    </div>
+                );
+            },
+        },
+        {
+            field: 'count_days',
+            header: 'روز شمار',
+            width: '10%',
+        },
+        {
+            field: 'details',
+            header: 'جزئیات',
+            width: '10%',
+        },
+    ];
 
     const factorDetailColumnFields = [
         {
@@ -285,7 +308,6 @@ const MainContent: SFC = () => {
 
     const removeCustomer = (event, customer) => {
         event.stopPropagation();
-        console.log(customer);
         const removeCustomer = {
             transaction_id: customer?.transaction_id,
         };
@@ -490,13 +512,10 @@ const MainContent: SFC = () => {
 
     const createUser = async () => {
         if (
-            !newUser.email ||
             !newUser.first_name ||
             !newUser.last_name ||
             !newUser.national_id ||
-            !newUser.phone ||
-            !newUser.wage_percent ||
-            !newUser.marketing_percent
+            !newUser.phone
         ) {
             toast.error('لطفا تمامی مقادیر را پر کنید.');
             return;
@@ -547,6 +566,7 @@ const MainContent: SFC = () => {
         setDetail(response);
         setSelectedUser(detail);
         setDetailModal(true);
+        setSelectedData([]);
     };
 
     const handleFactorDetailsClick = async (detail) => {
@@ -732,12 +752,18 @@ const MainContent: SFC = () => {
 
     const handleDeleteClick = async (e) => {
         try {
+            const data = selectedData.map((e) => {
+                return {
+                    ticker: e.ticker,
+                    national_id: e.national_id,
+                };
+            });
             await deleteUser(dispatch, selectedUser.national_id, {
-                national_id: e.national_id,
-                ticker: e.ticker,
+                customers: data,
             });
             toast.success('کاربر با موفقیت حذف شد.');
             setDetailModal(false);
+            setSelectedData([]);
         } catch (error) {
             console.error(error);
             toast.error('خطایی در حذف کاربر رخ داده است');
@@ -865,7 +891,7 @@ const MainContent: SFC = () => {
                                     htmlFor="firstName"
                                     className="text-right right-0 bg-inherit"
                                 >
-                                    نام کاربر
+                                    نام کاربر *
                                 </label>
                             </S.FloatLabelSection>
                             <S.FloatLabelSection>
@@ -884,7 +910,7 @@ const MainContent: SFC = () => {
                                     htmlFor="lastName"
                                     className="text-right right-0 bg-inherit"
                                 >
-                                    نام خانوادگی کاربر
+                                    نام خانوادگی کاربر *
                                 </label>
                             </S.FloatLabelSection>
                             <S.FloatLabelSection>
@@ -903,7 +929,7 @@ const MainContent: SFC = () => {
                                     htmlFor="nationalId"
                                     className="text-right right-0 bg-inherit"
                                 >
-                                    کد ملی
+                                    کد ملی *
                                 </label>
                             </S.FloatLabelSection>
                             <S.FloatLabelSection>
@@ -922,7 +948,7 @@ const MainContent: SFC = () => {
                                     htmlFor="phone"
                                     className="text-right right-0 bg-inherit"
                                 >
-                                    شماره موبایل
+                                    شماره موبایل *
                                 </label>
                             </S.FloatLabelSection>
                             <S.FloatLabelSection>
@@ -1021,20 +1047,32 @@ const MainContent: SFC = () => {
                         style={detailDialogStyle}
                         headerStyle={headerStyle}
                         contentStyle={contentStyle}
-                        onHide={() => setDetailModal(false)}
+                        onHide={() => {
+                            setDetailModal(false);
+                            setSelectedData([]);
+                        }}
                         dismissableMask
                         draggable={false}
                         resizable={false}
                     >
                         <div className="flex justify-between items-center mb-5">
                             <div className="flex items-center gap-5">
-                                <AddCustomer
+                                <AdminAddCustomer
                                     idCustomer={selectedUser.national_id}
                                 />
                                 <AdvanceSearch
                                     customerId={selectedUser.national_id}
                                     customerName={selectedUser.full_name}
                                 />
+                                {!!selectedData.length && (
+                                    <S.DeleteButton onClick={handleDeleteClick}>
+                                        <S.AddIcon
+                                            path={mdiTrashCan}
+                                            size={0.8}
+                                        />
+                                        <span>حذف</span>
+                                    </S.DeleteButton>
+                                )}
                             </div>
                             <Button
                                 onClick={exportData}
@@ -1048,7 +1086,6 @@ const MainContent: SFC = () => {
                             columnFields={DetailColumnFields}
                             pagination
                             onDetailsClick={handleDetailsClick2}
-                            onDeleteClick={handleDeleteClick}
                         />
                     </S.DialogStyle>
                     <S.DialogStyle

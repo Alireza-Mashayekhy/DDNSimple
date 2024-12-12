@@ -11,7 +11,7 @@ import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
 import { getTheme } from '@/redux/selectors';
-import { searchCustomers } from '@/api/customers';
+import { searchAdminCustomer, searchCustomers } from '@/api/customers';
 import { DatePicker } from 'zaman';
 export interface AddCustomerModalProps {
     idCustomer?: number;
@@ -20,7 +20,7 @@ export interface AddCustomerModalProps {
 }
 import moment from 'moment-jalaali';
 
-const AddModal: SFC<AddCustomerModalProps> = ({
+const AdminAddModal: SFC<AddCustomerModalProps> = ({
     idCustomer,
     visible,
     setVisibleProp,
@@ -31,9 +31,10 @@ const AddModal: SFC<AddCustomerModalProps> = ({
     const [name, setName] = useState(null);
     const [nationalCode, setNationalCode] = useState(null);
     const [stickCode, setStickCode] = useState(null);
+    const [fullname, setFullname] = useState(null);
     const [searchedCustomer, setSearchedCustomer] = useState(false);
-    const dispatch = useDispatch<AppDispatch>();
     const [startDate, setStartDate] = useState<string | undefined>(undefined);
+    const dispatch = useDispatch<AppDispatch>();
 
     useEffect(() => {
         getTickers(dispatch).then((res) => {
@@ -52,7 +53,7 @@ const AddModal: SFC<AddCustomerModalProps> = ({
 
     const add = async () => {
         if (idCustomer) {
-            if (ticker && stickCode) {
+            if (ticker && stickCode && name && nationalCode) {
                 try {
                     const customerInfo = {
                         stock_id: stickCode,
@@ -84,27 +85,13 @@ const AddModal: SFC<AddCustomerModalProps> = ({
             } else {
                 toast.error('لطفا فیلد های خالی را پر کنید!');
             }
-        } else {
-            if (ticker && name && nationalCode && stickCode) {
-                try {
-                    const customerInfo = {
-                        national_id: nationalCode,
-                        ticker: ticker,
-                    };
-                    const res = await addCustomer(customerInfo);
-                    setVisibleProp(false);
-                    if (res) {
-                        window.location.reload();
-                    } else {
-                        toast.error('این کاربر قبلا اضافه شده است');
-                    }
-                } catch (error) {
-                    toast.error(error.message);
-                }
-            } else {
-                toast.error('لطفا فیلد های خالی را پر کنید!');
-            }
         }
+    };
+
+    const convertToPersianDate = (gregorianDate: string): string => {
+        if (!gregorianDate) return '';
+        const persianDate = moment(gregorianDate).format('jYYYY-jMM-jDD');
+        return persianDate;
     };
 
     const theme = useSelector(getTheme);
@@ -123,23 +110,25 @@ const AddModal: SFC<AddCustomerModalProps> = ({
         color: theme === 'dark' ? '#fff' : '#000',
     };
 
-    const convertToPersianDate = (gregorianDate: string): string => {
-        if (!gregorianDate) return '';
-        const persianDate = moment(gregorianDate).format('jYYYY-jMM-jDD');
-        return persianDate;
-    };
-
     const searchCustomer = async () => {
         try {
-            if (!ticker || !nationalCode || !stickCode) {
+            if (!ticker || (!nationalCode && !stickCode && !name)) {
                 toast.error('لطفا تمامی مقادیر را پر کنید');
                 return;
             }
-            const res = await searchCustomers({
+            const params: { [key: string]: string } = {
                 ticker: ticker,
-                national_id: nationalCode,
-                stock_id: stickCode,
-            });
+            };
+            if (nationalCode) {
+                params.national_id = nationalCode;
+            }
+            if (stickCode) {
+                params.stock_id = stickCode;
+            }
+            if (name) {
+                params.full_name = name;
+            }
+            const res = await searchAdminCustomer(params);
             setNationalCode(res[0].national_id);
             setStickCode(res[0].stock_id);
             setName(res[0].full_name);
@@ -179,24 +168,22 @@ const AddModal: SFC<AddCustomerModalProps> = ({
                         placeholder="لطفاً یک نماد را انتخاب کنید."
                     />
                 </S.InputContainer>
-                {!idCustomer && (
-                    <S.InputContainer>
-                        <S.InputLabel htmlFor="nationalCode">
-                            کد ملی *
-                        </S.InputLabel>
-                        <S.InputTextStyle
-                            value={nationalCode}
-                            onChange={(e) => {
-                                setNationalCode(e.target.value),
-                                    setSearchedCustomer(false);
-                            }}
-                            id="nationalCode"
-                            keyfilter="int"
-                        />
-                    </S.InputContainer>
-                )}
+
                 <S.InputContainer>
-                    <S.InputLabel htmlFor="stickCode">کد بورسی *</S.InputLabel>
+                    <S.InputLabel htmlFor="nationalCode">کد ملی</S.InputLabel>
+                    <S.InputTextStyle
+                        value={nationalCode}
+                        onChange={(e) => {
+                            setNationalCode(e.target.value),
+                                setSearchedCustomer(false);
+                        }}
+                        id="nationalCode"
+                        keyfilter="int"
+                    />
+                </S.InputContainer>
+
+                <S.InputContainer>
+                    <S.InputLabel htmlFor="stickCode">کد بورسی</S.InputLabel>
                     <S.InputTextStyle
                         value={stickCode}
                         onChange={(e) => {
@@ -206,25 +193,18 @@ const AddModal: SFC<AddCustomerModalProps> = ({
                         id="stickCode"
                     />
                 </S.InputContainer>
-                {!idCustomer && (
-                    <S.InputContainer>
-                        <S.InputLabel htmlFor="name">نام سهامدار</S.InputLabel>
-                        <S.InputTextStyle
-                            disabled={!idCustomer}
-                            value={name}
-                            onChange={(e) => {
-                                setName(e.target.value),
-                                    setSearchedCustomer(false);
-                            }}
-                            id="name"
-                        />
-                    </S.InputContainer>
-                )}
-                {!idCustomer && (
-                    <div className="text-xs">
-                        کد ملی در مورد شناسه‌های prx ، ۱۲۳۴۵ قید شود
-                    </div>
-                )}
+
+                <S.InputContainer>
+                    <S.InputLabel htmlFor="name">نام سهامدار</S.InputLabel>
+                    <S.InputTextStyle
+                        disabled={!idCustomer}
+                        value={name}
+                        onChange={(e) => {
+                            setName(e.target.value), setSearchedCustomer(false);
+                        }}
+                        id="name"
+                    />
+                </S.InputContainer>
                 {searchedCustomer && (
                     <S.InputContainer>
                         <S.InputLabel htmlFor="name">از تاریخ:</S.InputLabel>
@@ -253,7 +233,7 @@ const AddModal: SFC<AddCustomerModalProps> = ({
                         onClick={() => setVisibleProp(false)}
                         autoFocus
                     ></S.FooterButton>
-                    {searchedCustomer || idCustomer ? (
+                    {searchedCustomer ? (
                         <S.FooterButton
                             label="ذخیره"
                             onClick={() => add()}
@@ -272,4 +252,4 @@ const AddModal: SFC<AddCustomerModalProps> = ({
     );
 };
 
-export default AddModal;
+export default AdminAddModal;

@@ -20,6 +20,7 @@ import { useDispatch } from 'react-redux';
 import { fetchFeeData as _fetchFeeData } from '@/dispatchers/fee';
 import FeeBack from '@/assets/feeBack.jpg';
 import { getAccess } from '@/utils/authentication';
+import { fetchCustomersData } from '@/dispatchers/customers';
 
 function numberFormatter(number: number) {
     const isNegative = number < 0;
@@ -219,8 +220,14 @@ const MainContent: SFC = () => {
         );
     }, []);
 
+    const getCustomerDataFunc = async () => {
+        if (!customerData.length) {
+            await dispatch(fetchCustomersData({ ticker: fund }));
+        }
+    };
+
     useEffect(() => {
-        // getDataFunc();
+        getCustomerDataFunc();
     }, []);
     const suggestStockId = (event: { query: string }) => {
         const query = event.query;
