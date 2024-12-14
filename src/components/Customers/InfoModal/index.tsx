@@ -17,6 +17,7 @@ interface DdnHistoryEntry {
     wage: number;
     freezed_count: number;
     shares: number;
+    commission: number;
 }
 
 interface DdnHistoryChartEntry {
@@ -172,7 +173,7 @@ const InfoModal: SFC<CustomerInfoModalProps> = ({
             header: 'کارمزد بازاریاب',
             width: '10%',
             body: (rowData: DdnHistoryEntry) =>
-                numberFormatter(Number(rowData.shares.toFixed(2))),
+                numberFormatter(Number(rowData.commission.toFixed(2))),
         },
     ];
 

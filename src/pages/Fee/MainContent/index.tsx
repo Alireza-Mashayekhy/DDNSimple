@@ -165,12 +165,17 @@ interface searchedType {
 }
 
 const MainContent: SFC = () => {
-    const [fund, setFund] = useState<string | undefined>('سیناد');
+    const [fund, setFund] = useState<string | undefined>('پایا');
     const [suggestions, setSuggestions] = useState({
         stockId: [],
         fund: [],
         lastname: [],
         nationalId: [],
+    });
+    const [tickerCustomerData, setTickerCustomerData] = useState({
+        stock_ids: [],
+        last_names: [],
+        national_ids: [],
     });
     const [stockId, setStockId] = useState('');
     const [lastname, setLastname] = useState('');
@@ -220,18 +225,15 @@ const MainContent: SFC = () => {
         );
     }, []);
 
-    const getCustomerDataFunc = async () => {
-        if (!customerData.length) {
-            await dispatch(fetchCustomersData({ ticker: fund }));
-        }
-    };
-
     useEffect(() => {
-        getCustomerDataFunc();
-    }, []);
+        setTickerCustomerData(
+            customerData.filter((e) => e.ticker === fund)[0].data
+        );
+    }, [fund]);
+
     const suggestStockId = (event: { query: string }) => {
         const query = event.query;
-        const filteredSuggestions = customerData.stock_ids
+        const filteredSuggestions = tickerCustomerData.stock_ids
             .filter((item: any) => item.includes(query))
             .map((item: any) => item);
         setSuggestions((prev: any) => ({
@@ -241,7 +243,7 @@ const MainContent: SFC = () => {
     };
     const suggestLastNames = (event: { query: string }) => {
         const query = event.query;
-        const filteredSuggestions = customerData.last_names
+        const filteredSuggestions = tickerCustomerData.last_names
             .filter((item: any) => item.includes(query))
             .map((item: any) => item);
         setSuggestions((prev: any) => ({
@@ -251,7 +253,7 @@ const MainContent: SFC = () => {
     };
     const suggestNationalIds = (event: { query: string }) => {
         const query = event.query;
-        const filteredSuggestions = customerData.national_ids
+        const filteredSuggestions = tickerCustomerData.national_ids
             .filter((item: any) => item.includes(query))
             .map((item: any) => item);
         setSuggestions((prev: any) => ({

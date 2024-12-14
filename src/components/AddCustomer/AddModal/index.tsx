@@ -1,12 +1,7 @@
 import { AppDispatch, SFC } from '@/types';
 import * as S from './Styles';
 import { useEffect, useState } from 'react';
-import {
-    addAdminCustomer,
-    addCustomer,
-    getCustomersData,
-    getTickers,
-} from '@/api/customerData';
+import { addAdminCustomer, addCustomer, getTickers } from '@/api/customerData';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
@@ -25,7 +20,7 @@ const AddModal: SFC<AddCustomerModalProps> = ({
     visible,
     setVisibleProp,
 }) => {
-    const [ticker, setTicker] = useState('سیناد');
+    const [ticker, setTicker] = useState('پایا');
     const [tickers, setTickers] = useState(null);
     const [filteredTickers, setFilteredTickers] = useState([]);
     const [name, setName] = useState(null);

@@ -1,12 +1,7 @@
 import { AppDispatch, SFC } from '@/types';
 import * as S from './Styles';
 import { useEffect, useState } from 'react';
-import {
-    addAdminCustomer,
-    addCustomer,
-    getCustomersData,
-    getTickers,
-} from '@/api/customerData';
+import { addAdminCustomer, getTickers } from '@/api/customerData';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
@@ -19,13 +14,25 @@ export interface AddCustomerModalProps {
     setVisibleProp: (value: boolean) => void;
 }
 import moment from 'moment-jalaali';
+import { getCustomersData } from '@/selectors/state';
 
 const AdminAddModal: SFC<AddCustomerModalProps> = ({
     idCustomer,
     visible,
     setVisibleProp,
 }) => {
-    const [ticker, setTicker] = useState('سیناد');
+    const [ticker, setTicker] = useState('پایا');
+    const [suggestions, setSuggestions] = useState({
+        stockId: [],
+        fund: [],
+        lastname: [],
+        nationalId: [],
+    });
+    const [tickerCustomerData, setTickerCustomerData] = useState({
+        stock_ids: [],
+        last_names: [],
+        national_ids: [],
+    });
     const [tickers, setTickers] = useState(null);
     const [filteredTickers, setFilteredTickers] = useState([]);
     const [name, setName] = useState(null);
@@ -35,6 +42,45 @@ const AdminAddModal: SFC<AddCustomerModalProps> = ({
     const [searchedCustomer, setSearchedCustomer] = useState(false);
     const [startDate, setStartDate] = useState<string | undefined>(undefined);
     const dispatch = useDispatch<AppDispatch>();
+
+    const customerData = useSelector(getCustomersData)?.data;
+
+    useEffect(() => {
+        setTickerCustomerData(
+            customerData.filter((e) => e.ticker === ticker)[0].data
+        );
+    }, [ticker]);
+
+    const suggestStockId = (event: { query: string }) => {
+        const query = event.query;
+        const filteredSuggestions = tickerCustomerData.stock_ids
+            .filter((item: any) => item.includes(query))
+            .map((item: any) => item);
+        setSuggestions((prev: any) => ({
+            ...prev,
+            stockId: filteredSuggestions,
+        }));
+    };
+    const suggestLastNames = (event: { query: string }) => {
+        const query = event.query;
+        const filteredSuggestions = tickerCustomerData.last_names
+            .filter((item: any) => item.includes(query))
+            .map((item: any) => item);
+        setSuggestions((prev: any) => ({
+            ...prev,
+            lastname: filteredSuggestions,
+        }));
+    };
+    const suggestNationalIds = (event: { query: string }) => {
+        const query = event.query;
+        const filteredSuggestions = tickerCustomerData.national_ids
+            .filter((item: any) => item.includes(query))
+            .map((item: any) => item);
+        setSuggestions((prev: any) => ({
+            ...prev,
+            nationalId: filteredSuggestions,
+        }));
+    };
 
     useEffect(() => {
         getTickers(dispatch).then((res) => {
@@ -173,12 +219,17 @@ const AdminAddModal: SFC<AddCustomerModalProps> = ({
                     <S.InputLabel htmlFor="nationalCode">کد ملی</S.InputLabel>
                     <S.InputTextStyle
                         value={nationalCode}
+                        suggestions={suggestions.nationalId}
+                        completeMethod={suggestNationalIds}
                         onChange={(e) => {
-                            setNationalCode(e.target.value),
-                                setSearchedCustomer(false);
+                            setNationalCode(e.value);
+                            setSearchedCustomer(false);
                         }}
                         id="nationalCode"
-                        keyfilter="int"
+                        panelStyle={{
+                            background: theme === 'dark' ? 'black' : 'white',
+                            color: 'red',
+                        }}
                     />
                 </S.InputContainer>
 
@@ -186,23 +237,33 @@ const AdminAddModal: SFC<AddCustomerModalProps> = ({
                     <S.InputLabel htmlFor="stickCode">کد بورسی</S.InputLabel>
                     <S.InputTextStyle
                         value={stickCode}
+                        suggestions={suggestions.stockId}
+                        completeMethod={suggestStockId}
                         onChange={(e) => {
-                            setStickCode(e.target.value),
-                                setSearchedCustomer(false);
+                            setStickCode(e.value);
+                            setSearchedCustomer(false);
                         }}
-                        id="stickCode"
+                        panelStyle={{
+                            background: theme === 'dark' ? 'black' : 'white',
+                            color: 'red',
+                        }}
                     />
                 </S.InputContainer>
 
                 <S.InputContainer>
                     <S.InputLabel htmlFor="name">نام سهامدار</S.InputLabel>
                     <S.InputTextStyle
-                        disabled={!idCustomer}
                         value={name}
+                        suggestions={suggestions.lastname}
+                        completeMethod={suggestLastNames}
                         onChange={(e) => {
-                            setName(e.target.value), setSearchedCustomer(false);
+                            setName(e.value);
+                            setSearchedCustomer(false);
                         }}
-                        id="name"
+                        panelStyle={{
+                            background: theme === 'dark' ? 'black' : 'white',
+                            color: 'red',
+                        }}
                     />
                 </S.InputContainer>
                 {searchedCustomer && (

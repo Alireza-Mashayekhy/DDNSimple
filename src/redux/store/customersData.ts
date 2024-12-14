@@ -8,7 +8,16 @@ interface CustomersState {
 }
 
 const initialState: CustomersState = {
-    data: [],
+    data: [
+        {
+            name: '',
+            data: {
+                last_names: [],
+                national_ids: [],
+                stock_ids: [],
+            },
+        },
+    ],
     loading: true,
     error: null,
 };

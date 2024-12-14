@@ -159,7 +159,7 @@ const dialogStyle = {
 
 const MainContent = () => {
     const [selectedTicker, setSelectedTicker] = useState<string | undefined>(
-        'سیناد'
+        'پایا'
     );
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
     const [ddnHistoryLoading, setDdnHistoryLoading] = useState(false);
@@ -194,6 +194,11 @@ const MainContent = () => {
     }, []);
     const [key, setKey] = useState<number>(0);
     const [selectedDate, setDate] = useState<string | null>(null);
+    const [tickerCustomerData, setTickerCustomerData] = useState({
+        stock_ids: [],
+        last_names: [],
+        national_ids: [],
+    });
 
     const headerStyle = {
         background: theme === 'dark' ? '#262626' : '#fff',
@@ -302,19 +307,13 @@ const MainContent = () => {
     const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
     const customers = useSelector(getCustomersData)?.data;
 
-    const dispatch = useDispatch<AppDispatch>();
-
-    const getCustomerDataFunc = async () => {
-        if (!customers.length) {
-            setDdnHistoryLoading(true);
-            await dispatch(fetchCustomersData({ ticker: selectedTicker }));
-            setDdnHistoryLoading(false);
-        }
-    };
-
     useEffect(() => {
-        getCustomerDataFunc();
+        setTickerCustomerData(
+            customers.filter((e) => e.ticker === selectedTicker)[0].data
+        );
     }, [selectedTicker]);
+
+    const dispatch = useDispatch<AppDispatch>();
 
     const searchTicker = (event: { query: string }) => {
         let query = event.query;
@@ -323,7 +322,7 @@ const MainContent = () => {
     };
     const searchLastname = (event: { query: string }) => {
         let query = event.query;
-        let filtered = customers.last_names.filter((item) =>
+        let filtered = tickerCustomerData.last_names.filter((item) =>
             item?.includes(query)
         );
         setFilteredLastname(filtered);
@@ -366,7 +365,7 @@ const MainContent = () => {
     };
 
     useEffect(() => {
-        loadDdnHistories('سیناد');
+        loadDdnHistories('پایا');
     }, []);
 
     const downloadDdnHistories = async () => {
@@ -407,14 +406,14 @@ const MainContent = () => {
 
     const searchNationalId = (event: { query: string }) => {
         let query = event.query;
-        let filtered = customers.national_ids.filter((item) =>
+        let filtered = tickerCustomerData.national_ids.filter((item) =>
             item?.includes(query)
         );
         setFilteredNationalId(filtered);
     };
     const searchStockId = (event: { query: string }) => {
         let query = event.query;
-        let filtered = customers.stock_ids.filter((item) =>
+        let filtered = tickerCustomerData.stock_ids.filter((item) =>
             item?.includes(query)
         );
         setFilteredStockId(filtered);
