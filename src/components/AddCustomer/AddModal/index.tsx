@@ -20,7 +20,7 @@ const AddModal: SFC<AddCustomerModalProps> = ({
     visible,
     setVisibleProp,
 }) => {
-    const [ticker, setTicker] = useState('پایا');
+    const [ticker, setTicker] = useState('سیناد');
     const [tickers, setTickers] = useState(null);
     const [filteredTickers, setFilteredTickers] = useState([]);
     const [name, setName] = useState(null);

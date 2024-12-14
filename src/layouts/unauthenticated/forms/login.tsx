@@ -10,7 +10,7 @@ import { toast } from 'react-toastify';
 import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
 import { useDispatch } from 'react-redux'; // Import useDispatch
-import { setAuthentication } from '@/redux/store/authentication';
+import { setAuthentication, setUserData } from '@/redux/store/authentication';
 import { login } from '@/api/authentication';
 
 const Login: SFC = () => {
@@ -36,6 +36,7 @@ const Login: SFC = () => {
                 username: values.username,
                 password: values.password,
             });
+            console.log(res);
             if (values.rememberMe) {
                 localStorage.setItem('accessToken', res.access);
                 localStorage.setItem('refreshToken', res.refresh);
@@ -43,6 +44,8 @@ const Login: SFC = () => {
                 sessionStorage.setItem('accessToken', res.access);
                 sessionStorage.setItem('refreshToken', res.refresh);
             }
+
+            dispatch(setUserData(res?.user_data));
 
             formikHelpers.resetForm();
             toast.success('خوش آمدید.');

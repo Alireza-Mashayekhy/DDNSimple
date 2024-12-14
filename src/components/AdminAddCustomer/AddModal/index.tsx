@@ -21,7 +21,7 @@ const AdminAddModal: SFC<AddCustomerModalProps> = ({
     visible,
     setVisibleProp,
 }) => {
-    const [ticker, setTicker] = useState('پایا');
+    const [ticker, setTicker] = useState('سیناد');
     const [suggestions, setSuggestions] = useState({
         stockId: [],
         fund: [],

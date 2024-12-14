@@ -25,9 +25,9 @@ const SettingModal: SFC<SettingModalProps> = ({ visible, setVisibleProp }) => {
     });
     const [uploadedImage, setUploadedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null); // State for the image preview
-    const [name, setName] = useState(profile.first_name || '');
-    const [lastname, setLastname] = useState(profile.last_name || '');
-    const [email, setEmail] = useState(profile.email || '');
+    const [name, setName] = useState(profile?.first_name || '');
+    const [lastname, setLastname] = useState(profile?.last_name || '');
+    const [email, setEmail] = useState(profile?.email || '');
     const dispatch = useDispatch();
 
     const uploadRef = useRef(null);
@@ -35,10 +35,10 @@ const SettingModal: SFC<SettingModalProps> = ({ visible, setVisibleProp }) => {
     const BASE_URL = import.meta.env.VITE_APP_API_URL.split('api')[0];
 
     const resetForm = () => {
-        setName(profile.first_name);
-        setLastname(profile.last_name);
-        setEmail(profile.email);
-        setImagePreview(profile.image ? profile.image : null);
+        setName(profile?.first_name);
+        setLastname(profile?.last_name);
+        setEmail(profile?.email);
+        setImagePreview(profile?.image ? profile?.image : null);
         setUploadedImage(null);
         if (uploadRef.current) {
             uploadRef.current.value = '';
@@ -53,7 +53,7 @@ const SettingModal: SFC<SettingModalProps> = ({ visible, setVisibleProp }) => {
 
     const save = () => {
         const formData = new FormData();
-        formData.append('national_id', profile.national_id);
+        formData.append('national_id', profile?.national_id);
         formData.append('first_name', name);
         formData.append('last_name', lastname);
         formData.append('email', email);
@@ -67,7 +67,7 @@ const SettingModal: SFC<SettingModalProps> = ({ visible, setVisibleProp }) => {
             .then((res) => {
                 const updatedProfile = res.data;
                 if (uploadedImage) {
-                    const imageUrl = `${BASE_URL}${updatedProfile.image}`;
+                    const imageUrl = `${BASE_URL}${updatedProfile?.image}`;
                     const updatedUserData = {
                         ...profile,
                         ...updatedProfile,
@@ -139,12 +139,12 @@ const SettingModal: SFC<SettingModalProps> = ({ visible, setVisibleProp }) => {
             style={{ width: '45vw', minWidth: '300px' }}
         >
             <S.PhoneContainer>
-                شماره موبایل: <S.Phone>{profile.phone || 'نامشخص'}</S.Phone>
+                شماره موبایل: <S.Phone>{profile?.phone || 'نامشخص'}</S.Phone>
             </S.PhoneContainer>
 
             <img
                 className="rounded-full w-24 h-24"
-                src={imagePreview || profile.image || defaultAvatar}
+                src={imagePreview || profile?.image || defaultAvatar}
             />
 
             <S.UploadContainer>

@@ -165,7 +165,7 @@ interface searchedType {
 }
 
 const MainContent: SFC = () => {
-    const [fund, setFund] = useState<string | undefined>('پایا');
+    const [fund, setFund] = useState<string | undefined>('سیناد');
     const [suggestions, setSuggestions] = useState({
         stockId: [],
         fund: [],

@@ -19,9 +19,9 @@ const Profile: SFC = () => {
     return (
         <S.Container>
             <S.PatternBackground src={pattern} />
-            {userData.image ? (
+            {userData?.image ? (
                 <S.Image
-                    src={userData.image}
+                    src={userData?.image}
                     onClick={() => setSettingModalVisible(true)}
                 />
             ) : (
@@ -34,7 +34,7 @@ const Profile: SFC = () => {
             )}
             <S.Name
                 onClick={() => setSettingModalVisible(true)}
-            >{`${userData.first_name} ${userData.last_name}`}</S.Name>
+            >{`${userData?.first_name} ${userData?.last_name}`}</S.Name>
             <S.Date>
                 {currentHour >= 18 || currentHour < 6
                     ? 'شب بخیر؛ '

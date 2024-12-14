@@ -159,7 +159,7 @@ const dialogStyle = {
 
 const MainContent = () => {
     const [selectedTicker, setSelectedTicker] = useState<string | undefined>(
-        'پایا'
+        'سیناد'
     );
     const [filteredTickers, setFilteredTickers] = useState<TickerItem[]>([]);
     const [ddnHistoryLoading, setDdnHistoryLoading] = useState(false);
@@ -365,7 +365,7 @@ const MainContent = () => {
     };
 
     useEffect(() => {
-        loadDdnHistories('پایا');
+        loadDdnHistories('سیناد');
     }, []);
 
     const downloadDdnHistories = async () => {

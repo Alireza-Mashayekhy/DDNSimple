@@ -24,11 +24,7 @@ const App = () => {
 
     const renderLayout = () => {
         if (isAuthenticated) {
-            if (role === 'MANAGER') {
-                return <Authenticated />;
-            } else {
-                return <AuthenticatedUser />;
-            }
+            return <Authenticated />;
         }
         return <Unauthenticated />;
     };
