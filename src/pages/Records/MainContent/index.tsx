@@ -304,12 +304,12 @@ const MainContent = () => {
         window.URL.revokeObjectURL(url);
     };
 
-    const tickerData = useSelector(getStockData)?.data.map((e) => e.ticker);
+    const tickerData = useSelector(getStockData)?.data?.map((e) => e.ticker);
     const customers = useSelector(getCustomersData)?.data;
 
     useEffect(() => {
         setTickerCustomerData(
-            customers.filter((e) => e.ticker === selectedTicker)[0].data
+            customers.filter((e) => e.ticker === selectedTicker)[0]?.data
         );
     }, [selectedTicker]);
 
@@ -351,7 +351,7 @@ const MainContent = () => {
             }
             const data = await getDdnHistories(params);
 
-            data.forEach((e) => {
+            data?.forEach((e) => {
                 e.total_value = (e.total_value / 1000000000).toFixed(1);
                 e.inv_type = e.inv_type === 'L' ? 'حقوقی' : 'حقیقی';
             });
@@ -448,7 +448,7 @@ const MainContent = () => {
             );
 
             const maxDatesDataset = datasets?.reduce((prev, current) =>
-                prev.data.length > current.data.length ? prev : current
+                prev.data?.length > current.data?.length ? prev : current
             );
 
             setChartData({
